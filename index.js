@@ -192,20 +192,15 @@ async function updateBanList(guild) {
   let banList = "🟢 **Er zijn momenteel geen gebande gebruikers.**";
 
   if (bans.size > 0) {
-
-    banList = bans
-      .map(b => `• <@${b.user.id}>`)
-      .join("\n");
-
+    banList = bans.map(b => `• <@${b.user.id}>`).join("\n");
   }
 
   const embed = new EmbedBuilder()
 
-    .setColor("#ff9900") // ORANJE
+    .setColor("#ff9900")
     .setTitle("🔨 SERVER BAN DATABASE")
 
     .addFields(
-
       {
         name: "📊 Server Statistieken",
         value:
@@ -214,24 +209,19 @@ async function updateBanList(guild) {
           `🔹 **Server naam:** ${guild.name}`,
         inline: false
       },
-
       {
         name: "🚫 Gebande Gebruikers",
         value: banList,
         inline: false
       }
-
     )
 
     .setThumbnail(guild.iconURL({ dynamic: true }))
-
     .setFooter({
       text: `${guild.name} • Moderation System`,
       iconURL: guild.iconURL({ dynamic: true })
     })
-
     .setTimestamp();
-
 
   if (!bannedMessage) {
     const msgs = await channel.messages.fetch({ limit: 10 });
@@ -255,9 +245,44 @@ client.on("guildBanRemove", ban => updateBanList(ban.guild));
 // =========================
 client.on("interactionCreate", async interaction => {
 
-  if (!interaction.isChatInputCommand()) return;
-
   const guild = interaction.guild;
+
+  // FIX: dropdown eerst verwerken
+  if (interaction.isStringSelectMenu()) {
+
+    if (interaction.customId === "unban_select") {
+
+      const userId = interaction.values[0];
+
+      try {
+
+        await guild.members.unban(userId);
+
+        const embed = new EmbedBuilder()
+          .setColor("#00ff99")
+          .setTitle("🔓 Gebruiker Unbanned")
+          .setDescription(`✅ **<@${userId}> is succesvol unbanned.**`)
+          .setTimestamp();
+
+        return interaction.update({
+          embeds: [embed],
+          components: []
+        });
+
+      } catch {
+
+        return interaction.update({
+          content: "❌ Kon gebruiker niet unbannen.",
+          components: []
+        });
+
+      }
+
+    }
+
+  }
+
+  if (!interaction.isChatInputCommand()) return;
 
   // ================= BAN =================
   if (interaction.commandName === "ban") {
@@ -269,51 +294,38 @@ client.on("interactionCreate", async interaction => {
     const reason = interaction.options.getString("reden") || "Geen reden";
 
     try {
-const dmEmbed = new EmbedBuilder()
 
-  .setColor("#ff9900")
-  .setTitle("⛔ Je bent geband")
-  .setDescription(
-    `Je bent **permanent verwijderd** uit **${guild.name}**.\n\n` +
-    `Als je denkt dat dit een fout is of je toegang wil terugkrijgen, kan je een **unban aanvraag** doen.`
-  )
+      const dmEmbed = new EmbedBuilder()
+        .setColor("#ff9900")
+        .setTitle("⛔ Je bent geband")
+        .setDescription(
+          `Je bent **permanent verwijderd** uit **${guild.name}**.\n\n` +
+          `Als je denkt dat dit een fout is of je toegang wil terugkrijgen, kan je een **unban aanvraag** doen.`
+        )
+        .addFields(
+          {
+            name: "🔨 Reden",
+            value: `\`${reason}\``
+          },
+          {
+            name: "💰 Unban aanvraag",
+            value:
+              `💳 **Kost:** €30\n` +
+              `💳 **Betaal via PayPal**\n` +
+              `💳 **Vermeld je Discord naam bij betaling**`
+          },
+          {
+            name: "🔗 PayPal betaling",
+            value: PAYPAL_LINK
+          }
+        )
+        .setFooter({ text: `${guild.name} • Moderation System` })
+        .setTimestamp();
 
-  .addFields(
+      try {
+        await user.send({ embeds: [dmEmbed] });
+      } catch {}
 
-    {
-      name: "🔨 Reden",
-      value: `\`${reason}\``,
-      inline: false
-    },
-
-    {
-      name: "💰 Unban aanvraag",
-      value:
-        `Wil je opnieuw toegang tot de server krijgen?\n\n` +
-        `💳 **Kost:** €30\n` +
-        `💳 **Betaal via PayPal**\n` +
-        `💳 **Vermeld je Discord naam bij de betaling**`,
-      inline: false
-    },
-
-    {
-      name: "🔗 PayPal betaling",
-      value: `${PAYPAL_LINK}`,
-      inline: false
-    }
-
-  )
-
-  .setFooter({
-    text: `${guild.name} • Moderation System`
-  })
-
-  .setTimestamp();
-
-
-try {
-  await user.send({ embeds: [dmEmbed] });
-} catch {}
     } catch {}
 
     await guild.members.ban(user.id, { reason });
@@ -356,25 +368,12 @@ try {
         .setTitle("💸 Nieuwe Donatie!")
         .setDescription(`🎉 **${user} heeft zojuist gedoneerd!**`)
         .addFields(
-          {
-            name: "👤 Donateur",
-            value: `${user}`,
-            inline: true
-          },
-          {
-            name: "💎 Donatie Tier",
-            value: `${role}`,
-            inline: true
-          },
-          {
-            name: "💬 Bericht",
-            value: message
-          }
+          { name: "👤 Donateur", value: `${user}`, inline: true },
+          { name: "💎 Donatie Tier", value: `${role}`, inline: true },
+          { name: "💬 Bericht", value: message }
         )
         .setThumbnail(user.displayAvatarURL({ dynamic: true }))
-        .setFooter({
-          text: "Dankjewel voor de support ❤️"
-        })
+        .setFooter({ text: "Dankjewel voor de support ❤️" })
         .setTimestamp();
 
       alertChannel.send({ embeds: [embed] });
@@ -384,111 +383,5 @@ try {
     interaction.reply("✅ Donatie rol succesvol gegeven.");
 
   }
-// ================= UNBAN =================
-if (interaction.commandName === "unban") {
-
-  if (!interaction.member.permissions.has(PermissionsBitField.Flags.BanMembers))
-    return interaction.reply({ content: "❌ Geen permissie.", ephemeral: true });
-
-  const bans = await guild.bans.fetch();
-
-  if (!bans.size) {
-    return interaction.reply({
-      content: "🟢 Er zijn geen gebande gebruikers.",
-      ephemeral: true
-    });
-  }
-
-  const options = bans.map(b => ({
-    label: b.user.tag,
-    value: b.user.id
-  })).slice(0, 25);
-
-  const menu = new StringSelectMenuBuilder()
-    .setCustomId("unban_select")
-    .setPlaceholder("Selecteer gebruiker om te unbannen")
-    .addOptions(options);
-
-  const row = new ActionRowBuilder().addComponents(menu);
-
-  const embed = new EmbedBuilder()
-    .setColor("#ff9900")
-    .setTitle("🔓 UNBAN PANEL")
-    .setDescription("Selecteer een gebruiker uit de lijst om te **unbannen**.")
-    .setFooter({ text: `${guild.name} • Moderation System` })
-    .setTimestamp();
-
-  await interaction.reply({
-    embeds: [embed],
-    components: [row]
-  });
-
-}
-
-  // ================= UNBAN SELECT =================
-  if (interaction.isStringSelectMenu()) {
-
-    if (interaction.customId === "unban_select") {
-
-      const userId = interaction.values[0];
-
-      try {
-
-        await interaction.guild.members.unban(userId);
-
-        const embed = new EmbedBuilder()
-          .setColor("#00ff99")
-          .setTitle("🔓 Gebruiker Unbanned")
-          .setDescription(`✅ **<@${userId}> is succesvol unbanned.**`)
-          .setTimestamp();
-
-        await interaction.update({
-          embeds: [embed],
-          components: []
-        });
-
-      } catch {
-
-        await interaction.update({
-          content: "❌ Kon gebruiker niet unbannen.",
-          components: []
-        });
-
-      }
-
-    }
-
-  }
-
-  // ================= CONFIG DONO =================
-  if (interaction.commandName === "configdono") {
-
-    if (!interaction.member.permissions.has(PermissionsBitField.Flags.Administrator))
-      return interaction.reply({ content: "❌ Admin only.", ephemeral: true });
-
-    const role = interaction.options.getRole("role");
-    const text = interaction.options.getString("tekst");
-
-    config.donationMessages[role.id] = text;
-
-    saveConfig(config);
-
-    interaction.reply(`✅ Alert tekst ingesteld voor ${role}`);
-
-  }
 
 });
-
-
-// =========================
-// LOGIN
-// =========================
-if (!process.env.TOKEN) {
-  console.error("❌ GEEN TOKEN IN .ENV");
-} else {
-
-  client.login(process.env.TOKEN)
-    .then(() => console.log("🔥 Discord bot succesvol gestart"))
-    .catch(console.error);
-
-}

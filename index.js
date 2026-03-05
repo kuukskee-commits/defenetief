@@ -162,6 +162,18 @@ new SlashCommandBuilder()
 .setName("callall")
 .setDescription("📞 Kick iedereen uit alle voice calls")
 
+new SlashCommandBuilder()
+.setName("nick")
+.setDescription("✏️ Verander de nickname van een gebruiker")
+.addUserOption(option =>
+option.setName("user")
+.setDescription("De gebruiker")
+.setRequired(true))
+.addStringOption(option =>
+option.setName("naam")
+.setDescription("Nieuwe nickname")
+.setRequired(true))
+
 ].map(cmd => cmd.toJSON());
 
 client.once("clientReady", async () => {
@@ -668,6 +680,53 @@ ephemeral: true
 
 }
 
+
+if (interaction.commandName === "nick") {
+
+if (!interaction.member.permissions.has(PermissionsBitField.Flags.ManageNicknames)) {
+return interaction.reply({ 
+content: "❌ Geen permissie.", 
+ephemeral: true 
+});
+}
+
+const user = interaction.options.getMember("user");
+const newNick = interaction.options.getString("naam");
+
+try {
+
+await user.setNickname(newNick);
+
+sendLog(guild, "✏️ Nickname Veranderd", "#00b0f4", [
+{
+name: "👤 Gebruiker",
+value: `<@${user.id}>\n${user.user.tag}\n${user.id}`
+},
+{
+name: "📝 Nieuwe naam",
+value: newNick
+},
+{
+name: "👮 Moderator",
+value: `<@${interaction.user.id}>\n${interaction.user.tag}\n${interaction.user.id}`
+}
+], user.displayAvatarURL({ dynamic: true }));
+
+return interaction.reply({
+content: `✏️ Nickname van ${user.user.tag} veranderd naar **${newNick}**`,
+ephemeral: true
+});
+
+} catch (err) {
+
+return interaction.reply({
+content: "❌ Kon nickname niet veranderen.",
+ephemeral: true
+});
+
+}
+
+}
 
 
 if (interaction.commandName === "dmid") {

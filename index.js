@@ -143,7 +143,6 @@ console.log("✅ Slash commands geregistreerd.");
 console.error("❌ Fout bij slash registratie:", error);
 }
 
-// start live banned list updater
 setInterval(() => {
 const guild = client.guilds.cache.get(process.env.GUILD_ID);
 if (guild) updateBanList(guild);
@@ -177,13 +176,11 @@ const embed = new EmbedBuilder()
 .addFields(
 {
 name: "📊 Totaal bans",
-value: `**${bans.size}** gebruikers`,
-inline: false
+value: `**${bans.size}** gebruikers`
 },
 {
 name: "👥 Gebande gebruikers",
-value: banList,
-inline: false
+value: banList
 }
 )
 .setFooter({
@@ -230,8 +227,10 @@ if (!interaction.isChatInputCommand() && !interaction.isStringSelectMenu()) retu
 // ================= BAN =================
 if (interaction.commandName === "ban") {
 
+await interaction.deferReply();
+
 if (!interaction.memberPermissions.has(PermissionsBitField.Flags.BanMembers))
-return interaction.reply({ content: "❌ Geen permissie.", ephemeral: true });
+return interaction.editReply("❌ Geen permissie.");
 
 const user = interaction.options.getUser("user");
 const reason = interaction.options.getString("reden") || "Geen reden opgegeven.";
@@ -239,48 +238,25 @@ const reason = interaction.options.getString("reden") || "Geen reden opgegeven."
 const member = await interaction.guild.members.fetch(user.id).catch(() => null);
 
 if (!member)
-return interaction.reply({ content: "❌ User niet gevonden.", ephemeral: true });
+return interaction.editReply("❌ User niet gevonden.");
 
 if (!member.bannable)
-return interaction.reply({ content: "❌ Ik kan deze persoon niet bannen.", ephemeral: true });
-
-const banEmbed = new EmbedBuilder()
-.setColor("#ff0000")
-.setTitle("⛔ Je bent geband")
-.setDescription(`Je bent permanent verwijderd uit **snitches get stitches**.`)
-.addFields(
-{ name: "🔨 Reden", value: reason },
-{
-name: "💰 Unban aanvraag",
-value:
-`Wil je opnieuw toegang tot de server krijgen?
-
-💳 Kost: €30
-💳 PayPal betaling
-💳 Vermeld je Discord naam`
-},
-{
-name: "🔗 PayPal link",
-value: "https://paypal.me/JOUW_LINK_HIER"
-}
-)
-.setTimestamp();
-
-try {
-await user.send({ embeds: [banEmbed] });
-} catch {}
+return interaction.editReply("❌ Ik kan deze persoon niet bannen.");
 
 await member.ban({ reason });
 
-await interaction.reply(`🔨 ${user.tag} is geband.`);
+interaction.editReply(`🔨 ${user.tag} is geband.`);
+
 }
 
 
 // ================= KICK =================
 if (interaction.commandName === "kick") {
 
+await interaction.deferReply();
+
 if (!interaction.memberPermissions.has(PermissionsBitField.Flags.KickMembers))
-return interaction.reply({ content: "❌ Geen permissie.", ephemeral: true });
+return interaction.editReply("❌ Geen permissie.");
 
 const user = interaction.options.getUser("user");
 const reason = interaction.options.getString("reden") || "Geen reden opgegeven.";
@@ -288,31 +264,39 @@ const reason = interaction.options.getString("reden") || "Geen reden opgegeven."
 const member = await interaction.guild.members.fetch(user.id).catch(() => null);
 
 if (!member)
-return interaction.reply({ content: "❌ User niet gevonden.", ephemeral: true });
+return interaction.editReply("❌ User niet gevonden.");
 
 if (!member.kickable)
-return interaction.reply({ content: "❌ Ik kan deze persoon niet kicken.", ephemeral: true });
+return interaction.editReply("❌ Ik kan deze persoon niet kicken.");
 
 await member.kick(reason);
 
-await interaction.reply(`👢 ${user.tag} is gekickt.`);
+interaction.editReply(`👢 ${user.tag} is gekickt.`);
+
 }
 
 
 // ================= WIPE =================
 if (interaction.commandName === "wipe") {
 
+await interaction.deferReply();
+
 if (!interaction.memberPermissions.has(PermissionsBitField.Flags.ManageRoles))
-return interaction.reply({content:"❌ Geen permissie.",ephemeral:true});
+return interaction.editReply("❌ Geen permissie.");
 
 const user = interaction.options.getUser("user");
-const member = await interaction.guild.members.fetch(user.id);
+const member = await interaction.guild.members.fetch(user.id).catch(()=>null);
+
+if(!member) return interaction.editReply("❌ User niet gevonden.");
 
 const roles = member.roles.cache.filter(r => r.id !== interaction.guild.id);
 
+if(roles.size === 0)
+return interaction.editReply("❌ Deze gebruiker heeft geen rollen.");
+
 await member.roles.remove(roles);
 
-interaction.reply(`🧹 Alle rollen verwijderd van ${user.tag}`);
+interaction.editReply(`🧹 Alle rollen verwijderd van ${user.tag}`);
 
 }
 
@@ -320,28 +304,32 @@ interaction.reply(`🧹 Alle rollen verwijderd van ${user.tag}`);
 // ================= DONO WIPE =================
 if (interaction.commandName === "donowipe") {
 
+await interaction.deferReply();
+
 if (!interaction.memberPermissions.has(PermissionsBitField.Flags.ManageRoles))
-return interaction.reply({content:"❌ Geen permissie.",ephemeral:true});
+return interaction.editReply("❌ Geen permissie.");
 
 const user = interaction.options.getUser("user");
-const member = await interaction.guild.members.fetch(user.id);
+const member = await interaction.guild.members.fetch(user.id).catch(()=>null);
+
+if(!member) return interaction.editReply("❌ User niet gevonden.");
 
 const rolesToRemove = member.roles.cache.filter(role =>
 DONATION_ROLES.includes(role.id)
 );
 
+if(rolesToRemove.size === 0)
+return interaction.editReply("❌ Deze gebruiker heeft geen donatie rollen.");
+
 await member.roles.remove(rolesToRemove);
 
-interaction.reply(`💸 Donatie rollen verwijderd van ${user.tag}`);
+interaction.editReply(`💸 Donatie rollen verwijderd van ${user.tag}`);
 
 }
 
 
 // ================= UNBAN =================
 if (interaction.commandName === "unban") {
-
-if (!interaction.memberPermissions.has(PermissionsBitField.Flags.BanMembers))
-return interaction.reply({ content: "❌ Geen permissie.", ephemeral: true });
 
 const bans = await interaction.guild.bans.fetch();
 
@@ -387,8 +375,6 @@ components: []
 // =========================
 // LOGIN
 // =========================
-console.log("TOKEN =", process.env.TOKEN ? "BESTAAT" : "BESTAAT NIET");
-
 if (!process.env.TOKEN) {
 console.error("❌ GEEN TOKEN GEVONDEN");
 } else {

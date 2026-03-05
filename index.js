@@ -197,10 +197,11 @@ client.on("interactionCreate", async (interaction) => {
 // =========================
 // LOGIN
 // =========================
-client.login(process.env.DISCORD_TOKEN)
-    .then(() => {
-        console.log("🔥 Discord login succesvol");
-    })
-    .catch((err) => {
-        console.error("❌ Discord login fout:", err);
-    });
+console.log("DISCORD_TOKEN =", process.env.DISCORD_TOKEN ? "BESTAAT" : "BESTAAT NIET");
+if (!process.env.DISCORD_TOKEN) {
+    console.error("❌ GEEN DISCORD_TOKEN GEVONDEN");
+} else {
+    client.login(process.env.DISCORD_TOKEN)
+        .then(() => console.log("🔥 Discord login succesvol"))
+        .catch(err => console.error("❌ Login fout:", err));
+}

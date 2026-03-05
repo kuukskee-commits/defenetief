@@ -2,6 +2,7 @@ require("dotenv").config();
 const express = require("express");
 const fs = require("fs");
 const path = require("path");
+
 const {
   Client,
   GatewayIntentBits,
@@ -22,25 +23,30 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 app.use(express.json());
-app.use("/dashboard", express.static(path.join(__dirname, "dashboard")));
 
-// Test route
 app.get("/", (req, res) => res.send("Bot is running"));
-
-// Config API routes
-app.get("/api/config", (req, res) => {
-  const config = JSON.parse(fs.readFileSync("./config.json", "utf-8"));
-  res.json(config);
-});
-
-app.post("/api/save", (req, res) => {
-  fs.writeFileSync("./config.json", JSON.stringify(req.body, null, 2));
-  res.json({ success: true, message: "Config opgeslagen!" });
-});
 
 app.listen(PORT, () => {
   console.log(`🌍 Web server running on port ${PORT}`);
 });
+
+// =========================
+// CONFIG
+// =========================
+const CONFIG_FILE = "./config.json";
+
+function loadConfig() {
+  if (!fs.existsSync(CONFIG_FILE)) {
+    fs.writeFileSync(CONFIG_FILE, JSON.stringify({ donationMessages: {} }, null, 2));
+  }
+  return JSON.parse(fs.readFileSync(CONFIG_FILE));
+}
+
+function saveConfig(data) {
+  fs.writeFileSync(CONFIG_FILE, JSON.stringify(data, null, 2));
+}
+
+let config = loadConfig();
 
 // =========================
 // DISCORD SETUP
@@ -53,16 +59,19 @@ client.on("error", console.error);
 process.on("unhandledRejection", console.error);
 
 // =========================
-// CONFIG
+// CONSTANTS
 // =========================
 const DONATION_ROLES = [
   "1478887899695939714",
   "1478887958537830523",
   "1478888005635674254"
 ];
+
 const DONO_HANDLER_ROLE = "1479133153225609440";
 const DONATION_ALERT_CHANNEL = "1478903623013634233";
 const BANNED_CHANNEL = "1479059891552387123";
+
+const PAYPAL_LINK = "https://paypal.me/YOURPAYPAL";
 
 let bannedMessage = null;
 
@@ -70,17 +79,22 @@ let bannedMessage = null;
 // SLASH COMMANDS
 // =========================
 const commands = [
+
   new SlashCommandBuilder()
     .setName("ban")
     .setDescription("Ban een gebruiker")
-    .addUserOption(option => option.setName("user").setDescription("De gebruiker").setRequired(true))
-    .addStringOption(option => option.setName("reden").setDescription("Reden van ban")),
+    .addUserOption(option =>
+      option.setName("user").setDescription("De gebruiker").setRequired(true))
+    .addStringOption(option =>
+      option.setName("reden").setDescription("Reden van ban")),
 
   new SlashCommandBuilder()
     .setName("kick")
     .setDescription("Kick een gebruiker")
-    .addUserOption(option => option.setName("user").setDescription("De gebruiker").setRequired(true))
-    .addStringOption(option => option.setName("reden").setDescription("Reden van kick")),
+    .addUserOption(option =>
+      option.setName("user").setDescription("De gebruiker").setRequired(true))
+    .addStringOption(option =>
+      option.setName("reden").setDescription("Reden van kick")),
 
   new SlashCommandBuilder()
     .setName("unban")
@@ -89,23 +103,38 @@ const commands = [
   new SlashCommandBuilder()
     .setName("wipe")
     .setDescription("Verwijder alle rollen van een gebruiker")
-    .addUserOption(option => option.setName("user").setDescription("De gebruiker").setRequired(true)),
+    .addUserOption(option =>
+      option.setName("user").setDescription("De gebruiker").setRequired(true)),
 
   new SlashCommandBuilder()
     .setName("donowipe")
     .setDescription("Verwijder alle donatie rollen")
-    .addUserOption(option => option.setName("user").setDescription("De gebruiker").setRequired(true)),
+    .addUserOption(option =>
+      option.setName("user").setDescription("De gebruiker").setRequired(true)),
 
   new SlashCommandBuilder()
     .setName("adddono")
     .setDescription("Geef een donatie rol")
-    .addUserOption(option => option.setName("user").setDescription("De gebruiker").setRequired(true))
+    .addUserOption(option =>
+      option.setName("user").setDescription("De gebruiker").setRequired(true))
+    .addRoleOption(option =>
+      option.setName("role").setDescription("Donatie rol").setRequired(true)),
+
+  new SlashCommandBuilder()
+    .setName("configdono")
+    .setDescription("Stel alert tekst in voor een donatie rol")
+    .addRoleOption(option =>
+      option.setName("role").setDescription("Donatie rol").setRequired(true))
+    .addStringOption(option =>
+      option.setName("tekst").setDescription("Alert tekst").setRequired(true))
+
 ].map(cmd => cmd.toJSON());
 
 // =========================
-// READY EVENT
+// READY
 // =========================
-client.once("ready", async () => {
+client.once("clientReady", async () => {
+
   console.log(`✅ Online als ${client.user.tag}`);
 
   client.user.setPresence({
@@ -114,31 +143,36 @@ client.once("ready", async () => {
   });
 
   const rest = new REST({ version: "10" }).setToken(process.env.TOKEN);
+
   try {
     await rest.put(
       Routes.applicationGuildCommands(process.env.CLIENT_ID, process.env.GUILD_ID),
       { body: commands }
     );
+
     console.log("✅ Slash commands geregistreerd.");
+
   } catch (error) {
-    console.error("❌ Slash registratie fout:", error);
+    console.error(error);
   }
 
-  // Live ban list update interval
   setInterval(() => {
     const guild = client.guilds.cache.get(process.env.GUILD_ID);
     if (guild) updateBanList(guild);
   }, 10000);
+
 });
 
 // =========================
 // LIVE BAN LIST
 // =========================
 async function updateBanList(guild) {
+
   const channel = guild.channels.cache.get(BANNED_CHANNEL);
   if (!channel) return;
 
   const bans = await guild.bans.fetch();
+
   let banList = "✅ Niemand is momenteel gebanned.";
 
   if (bans.size > 0) {
@@ -148,12 +182,10 @@ async function updateBanList(guild) {
   const embed = new EmbedBuilder()
     .setColor("#ff0000")
     .setTitle("🔨 Server Ban Lijst")
-    .setDescription("Live overzicht van alle bans")
     .addFields(
-      { name: "📊 Totaal bans", value: `**${bans.size}**`, inline: true },
+      { name: "📊 Totaal bans", value: `${bans.size}`, inline: true },
       { name: "👥 Gebande gebruikers", value: banList }
-    )
-    .setTimestamp();
+    );
 
   if (!bannedMessage) {
     const msgs = await channel.messages.fetch({ limit: 10 });
@@ -165,19 +197,93 @@ async function updateBanList(guild) {
   } else {
     await bannedMessage.edit({ embeds: [embed] });
   }
+
 }
 
 client.on("guildBanAdd", ban => updateBanList(ban.guild));
 client.on("guildBanRemove", ban => updateBanList(ban.guild));
 
 // =========================
-// INTERACTIONS
+// COMMAND HANDLER
 // =========================
-client.on("interactionCreate", async (interaction) => {
-  if (!interaction.isChatInputCommand() && !interaction.isStringSelectMenu()) return;
+client.on("interactionCreate", async interaction => {
 
-  // Hier komen al je commands zoals ban/kick/wipe/donowipe/adddono/unban etc.
-  // (Ik kan deze sectie opschonen en optimaliseren als je wilt)
+  if (!interaction.isChatInputCommand()) return;
+
+  const guild = interaction.guild;
+
+  // ================= BAN =================
+  if (interaction.commandName === "ban") {
+
+    if (!interaction.member.permissions.has(PermissionsBitField.Flags.BanMembers))
+      return interaction.reply({ content: "Geen permissie.", ephemeral: true });
+
+    const user = interaction.options.getUser("user");
+    const reason = interaction.options.getString("reden") || "Geen reden";
+
+    try {
+
+      await user.send(
+        `🚫 Je bent gebanned uit **${guild.name}**\n\nReden: ${reason}\n\nUnban kopen:\n${PAYPAL_LINK}`
+      );
+
+    } catch {}
+
+    await guild.members.ban(user.id, { reason });
+
+    interaction.reply(`🔨 ${user.tag} gebanned.`);
+
+  }
+
+  // ================= ADD DONO =================
+  if (interaction.commandName === "adddono") {
+
+    if (!interaction.member.roles.cache.has(DONO_HANDLER_ROLE))
+      return interaction.reply({ content: "Geen permissie.", ephemeral: true });
+
+    const user = interaction.options.getMember("user");
+    const role = interaction.options.getRole("role");
+
+    await user.roles.add(role);
+
+    const alertChannel = guild.channels.cache.get(DONATION_ALERT_CHANNEL);
+
+    const message =
+      config.donationMessages[role.id] ||
+      "Nieuwe donatie ontvangen!";
+
+    if (alertChannel) {
+
+      const embed = new EmbedBuilder()
+        .setColor("#00ff99")
+        .setTitle("💰 Donatie ontvangen")
+        .setDescription(`${user} heeft **${role.name}** gekregen!\n\n${message}`);
+
+      alertChannel.send({ embeds: [embed] });
+
+    }
+
+    interaction.reply("Donatie rol gegeven.");
+
+  }
+
+  // ================= CONFIG DONO =================
+  if (interaction.commandName === "configdono") {
+
+    if (!interaction.member.permissions.has(PermissionsBitField.Flags.Administrator))
+      return interaction.reply({ content: "Admin only.", ephemeral: true });
+
+    const role = interaction.options.getRole("role");
+    const text = interaction.options.getString("tekst");
+
+    config.donationMessages[role.id] = text;
+
+    saveConfig(config);
+
+    interaction.reply(`Alert tekst ingesteld voor ${role.name}`);
+
+  }
+
 });
 
 // =========================

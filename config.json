@@ -1,9 +1,7 @@
 {
-  "donations": {
-    "perm1": "Perms +",
-    "perm2": "Perms ++",
-    "perm3": "Perms +++"
-  },
-  "embedColor": "#00ff9d",
-  "donationChannel": "1478903623013634233"
+  "donationMessages": {
+    "1478887899695939714": "Bedankt voor je donatie! ❤️",
+    "1478887958537830523": "Bedankt voor je grote donatie! 💎",
+    "1478888005635674254": "LEGENDARY DONATION! 🔥"
+  }
 }

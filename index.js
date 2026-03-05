@@ -1,7 +1,6 @@
 require("dotenv").config();
 const express = require("express");
 const fs = require("fs");
-const path = require("path");
 
 const {
   Client,
@@ -16,6 +15,7 @@ const {
   ActivityType
 } = require("discord.js");
 
+
 // =========================
 // EXPRESS SERVER
 // =========================
@@ -24,11 +24,12 @@ const PORT = process.env.PORT || 3000;
 
 app.use(express.json());
 
-app.get("/", (req, res) => res.send("Bot is running"));
+app.get("/", (req, res) => res.send("🤖 Discord bot is running"));
 
 app.listen(PORT, () => {
   console.log(`🌍 Web server running on port ${PORT}`);
 });
+
 
 // =========================
 // CONFIG
@@ -48,15 +49,20 @@ function saveConfig(data) {
 
 let config = loadConfig();
 
+
 // =========================
-// DISCORD SETUP
+// DISCORD CLIENT
 // =========================
 const client = new Client({
-  intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMembers]
+  intents: [
+    GatewayIntentBits.Guilds,
+    GatewayIntentBits.GuildMembers
+  ]
 });
 
 client.on("error", console.error);
 process.on("unhandledRejection", console.error);
+
 
 // =========================
 // CONSTANTS
@@ -75,6 +81,7 @@ const PAYPAL_LINK = "https://paypal.me/YOURPAYPAL";
 
 let bannedMessage = null;
 
+
 // =========================
 // SLASH COMMANDS
 // =========================
@@ -82,7 +89,7 @@ const commands = [
 
   new SlashCommandBuilder()
     .setName("ban")
-    .setDescription("Ban een gebruiker")
+    .setDescription("🔨 Ban een gebruiker")
     .addUserOption(option =>
       option.setName("user").setDescription("De gebruiker").setRequired(true))
     .addStringOption(option =>
@@ -90,7 +97,7 @@ const commands = [
 
   new SlashCommandBuilder()
     .setName("kick")
-    .setDescription("Kick een gebruiker")
+    .setDescription("👢 Kick een gebruiker")
     .addUserOption(option =>
       option.setName("user").setDescription("De gebruiker").setRequired(true))
     .addStringOption(option =>
@@ -98,23 +105,23 @@ const commands = [
 
   new SlashCommandBuilder()
     .setName("unban")
-    .setDescription("Unban een gebruiker via dropdown"),
+    .setDescription("🔓 Unban een gebruiker via dropdown"),
 
   new SlashCommandBuilder()
     .setName("wipe")
-    .setDescription("Verwijder alle rollen van een gebruiker")
+    .setDescription("🧹 Verwijder alle rollen van een gebruiker")
     .addUserOption(option =>
       option.setName("user").setDescription("De gebruiker").setRequired(true)),
 
   new SlashCommandBuilder()
     .setName("donowipe")
-    .setDescription("Verwijder alle donatie rollen")
+    .setDescription("💰 Verwijder alle donatie rollen")
     .addUserOption(option =>
       option.setName("user").setDescription("De gebruiker").setRequired(true)),
 
   new SlashCommandBuilder()
     .setName("adddono")
-    .setDescription("Geef een donatie rol")
+    .setDescription("💎 Geef een donatie rol")
     .addUserOption(option =>
       option.setName("user").setDescription("De gebruiker").setRequired(true))
     .addRoleOption(option =>
@@ -122,7 +129,7 @@ const commands = [
 
   new SlashCommandBuilder()
     .setName("configdono")
-    .setDescription("Stel alert tekst in voor een donatie rol")
+    .setDescription("⚙️ Stel alert tekst in voor een donatie rol")
     .addRoleOption(option =>
       option.setName("role").setDescription("Donatie rol").setRequired(true))
     .addStringOption(option =>
@@ -130,30 +137,38 @@ const commands = [
 
 ].map(cmd => cmd.toJSON());
 
+
 // =========================
-// READY
+// READY EVENT
 // =========================
 client.once("clientReady", async () => {
 
-  console.log(`✅ Online als ${client.user.tag}`);
+  console.log(`✅ Bot online als ${client.user.tag}`);
 
   client.user.setPresence({
-    activities: [{ name: "Betalen dat kan!", type: ActivityType.Playing }],
+    activities: [{
+      name: "💸 Donaties verwerken",
+      type: ActivityType.Playing
+    }],
     status: "online"
   });
 
   const rest = new REST({ version: "10" }).setToken(process.env.TOKEN);
 
   try {
+
     await rest.put(
-      Routes.applicationGuildCommands(process.env.CLIENT_ID, process.env.GUILD_ID),
+      Routes.applicationGuildCommands(
+        process.env.CLIENT_ID,
+        process.env.GUILD_ID
+      ),
       { body: commands }
     );
 
-    console.log("✅ Slash commands geregistreerd.");
+    console.log("✅ Slash commands succesvol geregistreerd");
 
   } catch (error) {
-    console.error(error);
+    console.error("❌ Command registratie mislukt:", error);
   }
 
   setInterval(() => {
@@ -163,8 +178,9 @@ client.once("clientReady", async () => {
 
 });
 
+
 // =========================
-// LIVE BAN LIST
+// BAN LIST EMBED
 // =========================
 async function updateBanList(guild) {
 
@@ -173,23 +189,37 @@ async function updateBanList(guild) {
 
   const bans = await guild.bans.fetch();
 
-  let banList = "✅ Niemand is momenteel gebanned.";
+  let banList = "✅ **Er zijn momenteel geen gebande gebruikers.**";
 
   if (bans.size > 0) {
-    banList = bans.map(b => `🔹 <@${b.user.id}>`).join("\n");
+    banList = bans
+      .map(b => `🚫 **${b.user.tag}**`)
+      .join("\n");
   }
 
   const embed = new EmbedBuilder()
-    .setColor("#ff0000")
+    .setColor("#ff2b2b")
     .setTitle("🔨 Server Ban Lijst")
+    .setDescription("Hieronder staan alle gebruikers die momenteel gebanned zijn.")
     .addFields(
-      { name: "📊 Totaal bans", value: `${bans.size}`, inline: true },
-      { name: "👥 Gebande gebruikers", value: banList }
-    );
+      {
+        name: "📊 Totaal bans",
+        value: `**${bans.size}**`,
+        inline: true
+      },
+      {
+        name: "👥 Gebande gebruikers",
+        value: banList
+      }
+    )
+    .setFooter({
+      text: "Moderation System"
+    })
+    .setTimestamp();
 
   if (!bannedMessage) {
     const msgs = await channel.messages.fetch({ limit: 10 });
-    bannedMessage = msgs.find(m => m.author.id === guild.client.user.id);
+    bannedMessage = msgs.find(m => m.author.id === client.user.id);
   }
 
   if (!bannedMessage) {
@@ -202,6 +232,7 @@ async function updateBanList(guild) {
 
 client.on("guildBanAdd", ban => updateBanList(ban.guild));
 client.on("guildBanRemove", ban => updateBanList(ban.guild));
+
 
 // =========================
 // COMMAND HANDLER
@@ -216,30 +247,38 @@ client.on("interactionCreate", async interaction => {
   if (interaction.commandName === "ban") {
 
     if (!interaction.member.permissions.has(PermissionsBitField.Flags.BanMembers))
-      return interaction.reply({ content: "Geen permissie.", ephemeral: true });
+      return interaction.reply({ content: "❌ Geen permissie.", ephemeral: true });
 
     const user = interaction.options.getUser("user");
     const reason = interaction.options.getString("reden") || "Geen reden";
 
     try {
-
       await user.send(
-        `🚫 Je bent gebanned uit **${guild.name}**\n\nReden: ${reason}\n\nUnban kopen:\n${PAYPAL_LINK}`
+        `🚫 Je bent gebanned uit **${guild.name}**\n\n📄 Reden: ${reason}\n\n🔓 Unban kopen:\n${PAYPAL_LINK}`
       );
-
     } catch {}
 
     await guild.members.ban(user.id, { reason });
 
-    interaction.reply(`🔨 ${user.tag} gebanned.`);
+    const embed = new EmbedBuilder()
+      .setColor("#ff0000")
+      .setTitle("🔨 Gebruiker gebanned")
+      .addFields(
+        { name: "👤 Gebruiker", value: `${user.tag}`, inline: true },
+        { name: "📄 Reden", value: reason, inline: true }
+      )
+      .setTimestamp();
+
+    interaction.reply({ embeds: [embed] });
 
   }
+
 
   // ================= ADD DONO =================
   if (interaction.commandName === "adddono") {
 
     if (!interaction.member.roles.cache.has(DONO_HANDLER_ROLE))
-      return interaction.reply({ content: "Geen permissie.", ephemeral: true });
+      return interaction.reply({ content: "❌ Geen permissie.", ephemeral: true });
 
     const user = interaction.options.getMember("user");
     const role = interaction.options.getRole("role");
@@ -250,28 +289,50 @@ client.on("interactionCreate", async interaction => {
 
     const message =
       config.donationMessages[role.id] ||
-      "Nieuwe donatie ontvangen!";
+      "❤️ Bedankt voor het steunen van de server!";
 
     if (alertChannel) {
 
       const embed = new EmbedBuilder()
-        .setColor("#00ff99")
-        .setTitle("💰 Donatie ontvangen")
-        .setDescription(`${user} heeft **${role.name}** gekregen!\n\n${message}`);
+        .setColor("#00ff9d")
+        .setTitle("💸 Nieuwe Donatie!")
+        .setDescription(`🎉 **${user} heeft zojuist gedoneerd!**`)
+        .addFields(
+          {
+            name: "👤 Donateur",
+            value: `${user}`,
+            inline: true
+          },
+          {
+            name: "💎 Donatie Tier",
+            value: `${role}`,
+            inline: true
+          },
+          {
+            name: "💬 Bericht",
+            value: message
+          }
+        )
+        .setThumbnail(user.displayAvatarURL({ dynamic: true }))
+        .setFooter({
+          text: "Dankjewel voor de support ❤️"
+        })
+        .setTimestamp();
 
       alertChannel.send({ embeds: [embed] });
 
     }
 
-    interaction.reply("Donatie rol gegeven.");
+    interaction.reply("✅ Donatie rol succesvol gegeven.");
 
   }
+
 
   // ================= CONFIG DONO =================
   if (interaction.commandName === "configdono") {
 
     if (!interaction.member.permissions.has(PermissionsBitField.Flags.Administrator))
-      return interaction.reply({ content: "Admin only.", ephemeral: true });
+      return interaction.reply({ content: "❌ Admin only.", ephemeral: true });
 
     const role = interaction.options.getRole("role");
     const text = interaction.options.getString("tekst");
@@ -280,19 +341,22 @@ client.on("interactionCreate", async interaction => {
 
     saveConfig(config);
 
-    interaction.reply(`Alert tekst ingesteld voor ${role.name}`);
+    interaction.reply(`✅ Alert tekst ingesteld voor ${role}`);
 
   }
 
 });
 
+
 // =========================
 // LOGIN
 // =========================
 if (!process.env.TOKEN) {
-  console.error("❌ GEEN TOKEN");
+  console.error("❌ GEEN TOKEN IN .ENV");
 } else {
+
   client.login(process.env.TOKEN)
-    .then(() => console.log("🔥 Discord bot online"))
+    .then(() => console.log("🔥 Discord bot succesvol gestart"))
     .catch(console.error);
+
 }

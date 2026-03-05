@@ -199,6 +199,33 @@ const userId = interaction.values[0];
 
 await guild.members.unban(userId);
 
+try {
+
+const user = await client.users.fetch(userId);
+
+const unbanEmbed = new EmbedBuilder()
+.setColor("#00ff99")
+.setTitle("🎉 Je bent ge-unbanned")
+.setDescription("Je hebt opnieuw toegang gekregen tot **snitches get stitches**.")
+.addFields(
+{
+name: "✅ Status",
+value: "Je ban is verwijderd."
+},
+{
+name: "🔗 Server",
+value: "Je kan nu opnieuw joinen via de server invite."
+}
+)
+.setFooter({ text: "snitches get stitches • Moderation System" })
+.setTimestamp();
+
+await user.send({ embeds: [unbanEmbed] });
+
+} catch (err) {
+console.log("Kon geen unban DM sturen.");
+}
+
 const embed = new EmbedBuilder()
 .setColor("#00ff99")
 .setTitle("🔓 Gebruiker Unbanned")
@@ -220,6 +247,38 @@ return interaction.reply({ content: "❌ Geen permissie.", ephemeral: true });
 
 const user = interaction.options.getUser("user");
 const reason = interaction.options.getString("reden") || "Geen reden";
+
+try {
+
+const banEmbed = new EmbedBuilder()
+.setColor("#ff0000")
+.setTitle("⛔ Je bent geband")
+.setDescription("Je bent permanent verwijderd uit **snitches get stitches**.")
+.addFields(
+{
+name: "🔨 Reden",
+value: reason
+},
+{
+name: "💰 Unban aanvraag",
+value:
+"💳 **Kost:** €30\n" +
+"💳 **Betaal via PayPal**\n" +
+"💳 **Vermeld je Discord naam bij betaling**"
+},
+{
+name: "🔗 PayPal betaling",
+value: "[Klik hier om te betalen](https://paypal.me/YOURPAYPAL)"
+}
+)
+.setFooter({ text: "snitches get stitches • Moderation System" })
+.setTimestamp();
+
+await user.send({ embeds: [banEmbed] });
+
+} catch (err) {
+console.log("Kon geen DM sturen naar gebruiker.");
+}
 
 await guild.members.ban(user.id, { reason });
 

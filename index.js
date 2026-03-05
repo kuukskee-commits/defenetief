@@ -189,33 +189,63 @@ async function updateBanList(guild) {
 
   const bans = await guild.bans.fetch();
 
-  let banList = "✅ **Er zijn momenteel geen gebande gebruikers.**";
+  let banList = "🟢 **Er zijn momenteel geen gebande gebruikers.**";
 
   if (bans.size > 0) {
+
     banList = bans
-      .map(b => `🚫 **${b.user.tag}**`)
+      .map(b => `🚫 **${b.user.tag}** ・ ID: \`${b.user.id}\``)
       .join("\n");
+
   }
 
   const embed = new EmbedBuilder()
-    .setColor("#ff2b2b")
-    .setTitle("🔨 Server Ban Lijst")
-    .setDescription("Hieronder staan alle gebruikers die momenteel gebanned zijn.")
-    .addFields(
-      {
-        name: "📊 Totaal bans",
-        value: `**${bans.size}**`,
-        inline: true
-      },
-      {
-        name: "👥 Gebande gebruikers",
-        value: banList
-      }
+
+    .setColor("#ff9900") // ORANJE
+    .setTitle("🔨 SERVER BAN DATABASE")
+    .setDescription(
+      `Welkom bij de **live ban database** van **${guild.name}**.\n\n` +
+      `Hier kan je **alle gebande gebruikers** bekijken.\n` +
+      `Deze lijst **update automatisch** wanneer iemand gebanned of ge-unbanned wordt.\n`
     )
+
+    .addFields(
+
+      {
+        name: "📊 Server Statistieken",
+        value:
+          `🔹 **Totaal bans:** \`${bans.size}\`\n` +
+          `🔹 **Server leden:** \`${guild.memberCount}\`\n` +
+          `🔹 **Server naam:** ${guild.name}`,
+        inline: false
+      },
+
+      {
+        name: "🚫 Gebande Gebruikers",
+        value: banList,
+        inline: false
+      },
+
+      {
+        name: "🛡️ Moderation Info",
+        value:
+          `• Bans worden automatisch geregistreerd\n` +
+          `• Deze lijst wordt elke **10 seconden** vernieuwd\n` +
+          `• Moderators kunnen gebruikers unbannen via commands`,
+        inline: false
+      }
+
+    )
+
+    .setThumbnail(guild.iconURL({ dynamic: true }))
+
     .setFooter({
-      text: "Moderation System"
+      text: `${guild.name} • Moderation System`,
+      iconURL: guild.iconURL({ dynamic: true })
     })
+
     .setTimestamp();
+
 
   if (!bannedMessage) {
     const msgs = await channel.messages.fetch({ limit: 10 });

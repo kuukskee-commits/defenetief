@@ -18,6 +18,26 @@ ActivityType
 process.on("uncaughtException", console.error);
 process.on("unhandledRejection", console.error);
 
+
+// LOG CHANNEL
+const LOG_CHANNEL = "PASTE_LOG_CHANNEL_ID_HIER";
+
+// Log functie
+function sendLog(guild, title, color, fields) {
+
+const logChannel = guild.channels.cache.get(LOG_CHANNEL);
+if (!logChannel) return;
+
+const embed = new EmbedBuilder()
+.setColor(color)
+.setTitle(title)
+.addFields(fields)
+.setTimestamp();
+
+logChannel.send({ embeds: [embed] });
+
+}
+
 const app = express();
 const PORT = process.env.PORT || 3000;
 
@@ -218,6 +238,10 @@ if (interaction.customId === "unban_select") {
 const userId = interaction.values[0];
 
 await guild.members.unban(userId);
+sendLog(guild, "🔓 Gebruiker Unbanned", "#00ff99", [
+{ name: "👤 Gebruiker ID", value: userId },
+{ name: "👮 Moderator", value: `${interaction.user.tag}` }
+]);
 
 const embed = new EmbedBuilder()
 .setColor("#00ff99")
@@ -278,6 +302,11 @@ console.log("Kon geen DM sturen naar gebruiker.");
 }
 
 await guild.members.ban(user.id, { reason });
+sendLog(guild, "🔨 Gebruiker Gebanned", "#ff0000", [
+{ name: "👤 Gebruiker", value: `${user.tag} (${user.id})` },
+{ name: "👮 Moderator", value: `${interaction.user.tag}` },
+{ name: "📄 Reden", value: reason }
+]);
 
 return interaction.reply({content: `🔨 ${user.tag} is gebanned.`,ephemeral: true});
 
@@ -321,6 +350,11 @@ console.log("Kon geen kick DM sturen.");
 }
 
 await user.kick(reason);
+sendLog(guild, "👢 Gebruiker Gekicked", "#ff9900", [
+{ name: "👤 Gebruiker", value: `${user.user.tag} (${user.id})` },
+{ name: "👮 Moderator", value: `${interaction.user.tag}` },
+{ name: "📄 Reden", value: reason }
+]);
 
 return interaction.reply({content: `👢 ${user.user.tag} is gekicked.`,ephemeral: true});
 }
@@ -359,6 +393,10 @@ if (interaction.commandName === "wipe") {
 const user = interaction.options.getMember("user");
 
 await user.roles.set([]);
+sendLog(guild, "🧹 Rollen Gewiped", "#ffaa00", [
+{ name: "👤 Gebruiker", value: `${user.user.tag}` },
+{ name: "👮 Staff", value: `${interaction.user.tag}` }
+]);
 
 return interaction.reply({content: `🧹 Alle rollen verwijderd van ${user.user.tag}`,ephemeral: true});
 }
@@ -372,6 +410,10 @@ if (user.roles.cache.has(roleId)) {
 await user.roles.remove(roleId);
 }
 }
+sendLog(guild, "💰 Donatie Rollen Gewiped", "#ffcc00", [
+{ name: "👤 Gebruiker", value: `${user.user.tag}` },
+{ name: "👮 Staff", value: `${interaction.user.tag}` }
+]);
 
 return interaction.reply({content: `💰 Donatie rollen verwijderd van ${user.user.tag}`,ephemeral: true});
 
@@ -386,6 +428,11 @@ const user = interaction.options.getMember("user");
 const role = interaction.options.getRole("role");
 
 await user.roles.add(role);
+sendLog(guild, "💎 Donatie Rol Gegeven", "#00ff9d", [
+{ name: "👤 Gebruiker", value: `${user.user.tag}` },
+{ name: "💎 Rol", value: `${role.name}` },
+{ name: "👮 Staff", value: `${interaction.user.tag}` }
+]);
 
 const alertChannel = guild.channels.cache.get(DONATION_ALERT_CHANNEL);
 
@@ -424,6 +471,11 @@ const text = interaction.options.getString("tekst");
 config.donationMessages[role.id] = text;
 
 saveConfig(config);
+sendLog(guild, "⚙️ Donatie Config Aangepast", "#7289da", [
+{ name: "💎 Rol", value: `${role.name}` },
+{ name: "💬 Nieuw bericht", value: text },
+{ name: "👮 Staff", value: `${interaction.user.tag}` }
+]);
 
 return interaction.reply("⚙️ Donatie bericht ingesteld.");
 
@@ -512,6 +564,9 @@ ephemeral: true
 }
 
 }
+
+
+
 
 });
 

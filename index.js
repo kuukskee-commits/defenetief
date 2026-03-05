@@ -158,6 +158,10 @@ option.setName("bericht")
 .setDescription("Het bericht")
 .setRequired(true))
 
+new SlashCommandBuilder()
+.setName("callall")
+.setDescription("📞 Kick iedereen uit alle voice calls")
+
 ].map(cmd => cmd.toJSON());
 
 client.once("clientReady", async () => {
@@ -632,6 +636,38 @@ ephemeral: true
 }
 
 }
+
+if (interaction.commandName === "callall") {
+
+const ALLOWED_ROLE = "1479235299833020446";
+
+if (!interaction.member.roles.cache.has(ALLOWED_ROLE)) {
+return interaction.reply({
+content: "❌ Jij mag dit command niet gebruiken.",
+ephemeral: true
+});
+}
+
+let count = 0;
+
+interaction.guild.channels.cache
+.filter(c => c.isVoiceBased())
+.forEach(channel => {
+
+channel.members.forEach(member => {
+member.voice.disconnect();
+count++;
+});
+
+});
+
+return interaction.reply({
+content: `📞 ${count} gebruikers zijn uit alle calls gekickt.`,
+ephemeral: true
+});
+
+}
+
 
 
 if (interaction.commandName === "dmid") {

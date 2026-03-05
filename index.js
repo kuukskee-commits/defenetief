@@ -162,14 +162,33 @@ if(!channel) return;
 
 const bans = await guild.bans.fetch();
 
+let banList = "✅ Niemand is momenteel gebanned.";
+
+if (bans.size > 0) {
+    banList = bans
+        .map(b => `🔹 <@${b.user.id}>`)
+        .join("\n");
+}
+
 const embed = new EmbedBuilder()
-.setTitle("🔨 Live Ban Lijst")
-.setColor("Red")
-.setDescription(
-bans.size === 0
-? "✅ Niemand is momenteel gebanned."
-: bans.map(b => `• ${b.user.tag}`).join("\n")
+.setColor("#ff0000")
+.setTitle("🔨 Server Ban Lijst")
+.setDescription("Hier zie je **live** welke gebruikers momenteel gebanned zijn.")
+.addFields(
+{
+name: "📊 Totaal bans",
+value: `**${bans.size}** gebruikers`,
+inline: false
+},
+{
+name: "👥 Gebande gebruikers",
+value: banList,
+inline: false
+}
 )
+.setFooter({
+text: "Live ban tracker • automatisch bijgewerkt"
+})
 .setTimestamp();
 
 if(!bannedMessage){

@@ -23,7 +23,7 @@ process.on("unhandledRejection", console.error);
 const LOG_CHANNEL = "1479215303123538021";
 
 // Log functie
-function sendLog(guild, title, color, fields) {
+function sendLog(guild, title, color, fields, avatar = null) {
 
 const logChannel = guild.channels.cache.get(LOG_CHANNEL);
 if (!logChannel) return;
@@ -33,6 +33,10 @@ const embed = new EmbedBuilder()
 .setTitle(title)
 .addFields(fields)
 .setTimestamp();
+
+if (avatar) {
+embed.setThumbnail(avatar);
+}
 
 logChannel.send({ embeds: [embed] });
 
@@ -238,10 +242,22 @@ if (interaction.customId === "unban_select") {
 const userId = interaction.values[0];
 
 await guild.members.unban(userId);
+const user = await client.users.fetch(userId);
+
 sendLog(guild, "🔓 Gebruiker Unbanned", "#00ff99", [
-{ name: "👤 Gebruiker ID", value: userId },
-{ name: "👮 Moderator", value: `${interaction.user.tag}` }
-]);
+{
+name: "👤 Gebruiker",
+value: `<@${userId}>
+${user.tag}
+${userId}`
+},
+{
+name: "👮 Moderator",
+value: `<@${interaction.user.id}>
+${interaction.user.tag}
+${interaction.user.id}`
+}
+], user.displayAvatarURL({ dynamic: true }));
 
 const embed = new EmbedBuilder()
 .setColor("#00ff99")
@@ -303,10 +319,23 @@ console.log("Kon geen DM sturen naar gebruiker.");
 
 await guild.members.ban(user.id, { reason });
 sendLog(guild, "🔨 Gebruiker Gebanned", "#ff0000", [
-{ name: "👤 Gebruiker", value: `${user.tag} (${user.id})` },
-{ name: "👮 Moderator", value: `${interaction.user.tag}` },
-{ name: "📄 Reden", value: reason }
-]);
+{
+name: "👤 Gebruiker",
+value: `<@${user.id}>
+${user.tag}
+${user.id}`
+},
+{
+name: "👮 Moderator",
+value: `<@${interaction.user.id}>
+${interaction.user.tag}
+${interaction.user.id}`
+},
+{
+name: "📄 Reden",
+value: reason
+}
+], user.displayAvatarURL({ dynamic: true }));
 
 return interaction.reply({content: `🔨 ${user.tag} is gebanned.`,ephemeral: true});
 
@@ -351,10 +380,23 @@ console.log("Kon geen kick DM sturen.");
 
 await user.kick(reason);
 sendLog(guild, "👢 Gebruiker Gekicked", "#ff9900", [
-{ name: "👤 Gebruiker", value: `${user.user.tag} (${user.id})` },
-{ name: "👮 Moderator", value: `${interaction.user.tag}` },
-{ name: "📄 Reden", value: reason }
-]);
+{
+name: "👤 Gebruiker",
+value: `<@${user.id}>
+${user.user.tag}
+${user.id}`
+},
+{
+name: "👮 Moderator",
+value: `<@${interaction.user.id}>
+${interaction.user.tag}
+${interaction.user.id}`
+},
+{
+name: "📄 Reden",
+value: reason
+}
+], user.displayAvatarURL({ dynamic: true }));
 
 return interaction.reply({content: `👢 ${user.user.tag} is gekicked.`,ephemeral: true});
 }
@@ -394,9 +436,19 @@ const user = interaction.options.getMember("user");
 
 await user.roles.set([]);
 sendLog(guild, "🧹 Rollen Gewiped", "#ffaa00", [
-{ name: "👤 Gebruiker", value: `${user.user.tag}` },
-{ name: "👮 Staff", value: `${interaction.user.tag}` }
-]);
+{
+name: "👤 Gebruiker",
+value: `<@${user.id}>
+${user.user.tag}
+${user.id}`
+},
+{
+name: "👮 Staff",
+value: `<@${interaction.user.id}>
+${interaction.user.tag}
+${interaction.user.id}`
+}
+], user.displayAvatarURL({ dynamic: true }));
 
 return interaction.reply({content: `🧹 Alle rollen verwijderd van ${user.user.tag}`,ephemeral: true});
 }
@@ -411,9 +463,19 @@ await user.roles.remove(roleId);
 }
 }
 sendLog(guild, "💰 Donatie Rollen Gewiped", "#ffcc00", [
-{ name: "👤 Gebruiker", value: `${user.user.tag}` },
-{ name: "👮 Staff", value: `${interaction.user.tag}` }
-]);
+{
+name: "👤 Gebruiker",
+value: `<@${user.id}>
+${user.user.tag}
+${user.id}`
+},
+{
+name: "👮 Staff",
+value: `<@${interaction.user.id}>
+${interaction.user.tag}
+${interaction.user.id}`
+}
+], user.displayAvatarURL({ dynamic: true }));
 
 return interaction.reply({content: `💰 Donatie rollen verwijderd van ${user.user.tag}`,ephemeral: true});
 
@@ -429,10 +491,23 @@ const role = interaction.options.getRole("role");
 
 await user.roles.add(role);
 sendLog(guild, "💎 Donatie Rol Gegeven", "#00ff9d", [
-{ name: "👤 Gebruiker", value: `${user.user.tag}` },
-{ name: "💎 Rol", value: `${role.name}` },
-{ name: "👮 Staff", value: `${interaction.user.tag}` }
-]);
+{
+name: "👤 Gebruiker",
+value: `<@${user.id}>
+${user.user.tag}
+${user.id}`
+},
+{
+name: "💎 Rol",
+value: `${role.name}`
+},
+{
+name: "👮 Staff",
+value: `<@${interaction.user.id}>
+${interaction.user.tag}
+${interaction.user.id}`
+}
+], user.displayAvatarURL({ dynamic: true }));
 
 const alertChannel = guild.channels.cache.get(DONATION_ALERT_CHANNEL);
 
@@ -474,8 +549,13 @@ saveConfig(config);
 sendLog(guild, "⚙️ Donatie Config Aangepast", "#7289da", [
 { name: "💎 Rol", value: `${role.name}` },
 { name: "💬 Nieuw bericht", value: text },
-{ name: "👮 Staff", value: `${interaction.user.tag}` }
-]);
+{
+name: "👮 Staff",
+value: `<@${interaction.user.id}>
+${interaction.user.tag}
+${interaction.user.id}`
+}
+], interaction.user.displayAvatarURL({ dynamic: true }));
 
 return interaction.reply("⚙️ Donatie bericht ingesteld.");
 

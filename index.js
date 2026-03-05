@@ -108,7 +108,15 @@ new SlashCommandBuilder()
 .addRoleOption(option =>
 option.setName("role").setDescription("Donatie rol").setRequired(true))
 .addStringOption(option =>
-option.setName("tekst").setDescription("Alert tekst").setRequired(true))
+option.setName("tekst").setDescription("Alert tekst").setRequired(true)),
+
+new SlashCommandBuilder()
+.setName("dm")
+.setDescription("📩 Stuur een DM via de bot")
+.addUserOption(option =>
+option.setName("user").setDescription("De gebruiker").setRequired(true))
+.addStringOption(option =>
+option.setName("tekst").setDescription("Het bericht").setRequired(true))
 
 ].map(cmd => cmd.toJSON());
 
@@ -302,8 +310,7 @@ console.log("Kon geen kick DM sturen.");
 
 await user.kick(reason);
 
-return interaction.reply(`👢 ${user.user.tag} is gekicked.`);
-
+return interaction.reply({content: `👢 ${user.user.tag} is gekicked.`,ephemeral: true});
 }
 
 
@@ -344,8 +351,7 @@ const user = interaction.options.getMember("user");
 
 await user.roles.set([]);
 
-return interaction.reply(`🧹 Alle rollen verwijderd van ${user.user.tag}`);
-
+return interaction.reply({content: `🧹 Alle rollen verwijderd van ${user.user.tag}`,ephemeral: true});
 }
 
 if (interaction.commandName === "donowipe") {
@@ -413,6 +419,56 @@ saveConfig(config);
 return interaction.reply("⚙️ Donatie bericht ingesteld.");
 
 }
+
+
+if (interaction.commandName === "dm") {
+
+const ALLOWED_ROLE_1 = "1478874554448482517";
+const ALLOWED_ROLE_2 = "1479187012979396824";
+
+if (
+!interaction.member.roles.cache.has(ALLOWED_ROLE_1) &&
+!interaction.member.roles.cache.has(ALLOWED_ROLE_2)
+) {
+return interaction.reply({
+content: "❌ Jij mag dit command niet gebruiken.",
+ephemeral: true
+});
+}
+
+const user = interaction.options.getUser("user");
+const text = interaction.options.getString("tekst");
+
+try {
+
+const embed = new EmbedBuilder()
+.setColor("#0099ff")
+.setTitle("📩 Bericht van de server")
+.setDescription(text)
+.addFields(
+{ name: "👤 Verzonden door", value: interaction.user.tag }
+)
+.setFooter({ text: "snitches get stitches • Moderation System" })
+.setTimestamp();
+
+await user.send({ embeds: [embed] });
+
+return interaction.reply({
+content: `✅ Bericht gestuurd naar ${user.tag}`,
+ephemeral: true
+});
+
+} catch (err) {
+
+return interaction.reply({
+content: "❌ Kon geen DM sturen. DM's staan misschien uit.",
+ephemeral: true
+});
+
+}
+
+}
+
 
 });
 

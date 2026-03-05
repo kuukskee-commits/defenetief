@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+<title>Bot Dashboard</title>
+<style>
+
+body{
+font-family: Arial;
+background:#0f172a;
+color:white;
+padding:40px;
+}
+
+input{
+padding:10px;
+margin:10px;
+width:300px;
+}
+
+button{
+padding:10px 20px;
+background:#00ff9d;
+border:none;
+cursor:pointer;
+}
+
+</style>
+</head>
+
+<body>
+
+<h1>Discord Bot Dashboard</h1>
+
+<h2>Donatie pakketten</h2>
+
+<label>Perms +</label><br>
+<input id="perm1"><br>
+
+<label>Perms ++</label><br>
+<input id="perm2"><br>
+
+<label>Perms +++</label><br>
+<input id="perm3"><br>
+
+<label>Embed kleur</label><br>
+<input id="color"><br>
+
+<button onclick="save()">Opslaan</button>
+
+<script>
+
+async function load(){
+
+const res = await fetch("/api/config");
+const data = await res.json();
+
+document.getElementById("perm1").value = data.donations.perm1;
+document.getElementById("perm2").value = data.donations.perm2;
+document.getElementById("perm3").value = data.donations.perm3;
+document.getElementById("color").value = data.embedColor;
+
+}
+
+async function save(){
+
+const data = {
+donations:{
+perm1:document.getElementById("perm1").value,
+perm2:document.getElementById("perm2").value,
+perm3:document.getElementById("perm3").value
+},
+embedColor:document.getElementById("color").value
+}
+
+await fetch("/api/save",{
+method:"POST",
+headers:{'Content-Type':'application/json'},
+body:JSON.stringify(data)
+});
+
+alert("Instellingen opgeslagen!");
+
+}
+
+load()
+
+</script>
+
+</body>
+</html>

@@ -20,7 +20,7 @@ process.on("unhandledRejection", console.error);
 
 
 // LOG CHANNEL
-const LOG_CHANNEL = "PASTE_LOG_CHANNEL_ID_HIER";
+const LOG_CHANNEL = "1479215303123538021";
 
 // Log functie
 function sendLog(guild, title, color, fields) {

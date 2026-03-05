@@ -29,7 +29,8 @@ const {
     StringSelectMenuBuilder,
     REST,
     Routes,
-    SlashCommandBuilder
+    SlashCommandBuilder,
+    ActivityType
 } = require("discord.js");
 
 const client = new Client({
@@ -83,7 +84,17 @@ const commands = [
 // READY EVENT
 // =========================
 client.once("ready", async () => {
+
     console.log(`✅ Online als ${client.user.tag}`);
+
+    // BOT STATUS
+    client.user.setPresence({
+        activities: [{
+            name: "Betalen dat kan!",
+            type: ActivityType.Playing
+        }],
+        status: "online"
+    });
 
     const rest = new REST({ version: "10" }).setToken(process.env.TOKEN);
 
@@ -120,14 +131,14 @@ client.on("interactionCreate", async (interaction) => {
         const reason = interaction.options.getString("reden") || "Geen reden opgegeven.";
 
         const member = await interaction.guild.members.fetch(user.id).catch(() => null);
+
         if (!member)
             return interaction.reply({ content: "❌ User niet gevonden.", ephemeral: true });
 
         if (!member.bannable)
             return interaction.reply({ content: "❌ Ik kan deze persoon niet bannen.", ephemeral: true });
 
-
-        // ================= BAN DM EMBED =================
+        // BAN EMBED DM
         const banEmbed = new EmbedBuilder()
             .setColor("#ff0000")
             .setTitle("⛔ Je bent geband")
@@ -141,9 +152,9 @@ client.on("interactionCreate", async (interaction) => {
 
 Je kan een **unban-aanvraag** indienen via een administratieve heractivatie.
 
-💳 **Kost:** €30  
-💳 **Betaling via:** PayPal  
-💳 **Vermeld je Discord naam in de betaling**
+💳 Kost: €30  
+💳 Betaling via PayPal  
+💳 Vermeld je Discord naam in de betaling
 
 Na betaling wordt je aanvraag handmatig gecontroleerd door het staff team.`
                 },
@@ -154,27 +165,25 @@ Na betaling wordt je aanvraag handmatig gecontroleerd door het staff team.`
                 {
                     name: "⚠️ Let op",
                     value:
-`• Geen refunds  
-• Misbruik leidt tot permanente blacklist  
+`• Geen refunds
+• Misbruik leidt tot permanente blacklist
 • Dit garandeert geen automatische goedkeuring`
                 }
             )
             .setFooter({ text: "Contacteer staff na betaling met een bewijs van transactie." })
             .setTimestamp();
 
-
-        // DM proberen sturen
         try {
             await user.send({ embeds: [banEmbed] });
         } catch (err) {
-            console.log("Kon geen DM sturen naar gebruiker.");
+            console.log("Kon geen DM sturen.");
         }
 
-        // Daarna bannen
         await member.ban({ reason });
 
         await interaction.reply(`🔨 ${user.tag} is geband.`);
     }
+
 
     // ================= KICK =================
     if (interaction.isChatInputCommand() && interaction.commandName === "kick") {
@@ -186,6 +195,7 @@ Na betaling wordt je aanvraag handmatig gecontroleerd door het staff team.`
         const reason = interaction.options.getString("reden") || "Geen reden opgegeven.";
 
         const member = await interaction.guild.members.fetch(user.id).catch(() => null);
+
         if (!member)
             return interaction.reply({ content: "❌ User niet gevonden.", ephemeral: true });
 
@@ -196,6 +206,7 @@ Na betaling wordt je aanvraag handmatig gecontroleerd door het staff team.`
 
         await interaction.reply(`👢 ${user.tag} is gekickt.`);
     }
+
 
     // ================= UNBAN =================
     if (interaction.isChatInputCommand() && interaction.commandName === "unban") {
@@ -226,6 +237,7 @@ Na betaling wordt je aanvraag handmatig gecontroleerd door het staff team.`
             ephemeral: true
         });
     }
+
 
     if (interaction.isStringSelectMenu() && interaction.customId === "unban_select") {
 

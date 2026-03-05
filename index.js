@@ -156,7 +156,7 @@ option.setName("id")
 .addStringOption(option =>
 option.setName("bericht")
 .setDescription("Het bericht")
-.setRequired(true))
+.setRequired(true)),
 
 new SlashCommandBuilder()
 .setName("callall")

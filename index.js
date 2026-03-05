@@ -160,7 +160,7 @@ option.setName("bericht")
 
 new SlashCommandBuilder()
 .setName("callall")
-.setDescription("📞 Kick iedereen uit alle voice calls")
+.setDescription("📞 Kick iedereen uit alle voice calls"),
 
 new SlashCommandBuilder()
 .setName("nick")

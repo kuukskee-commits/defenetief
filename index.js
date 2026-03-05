@@ -705,7 +705,7 @@ if (message.channel.id !== AI_CHANNEL_ID) return;
 try {
 
 const response = await openai.chat.completions.create({
-model: "gpt-4.1-mini"
+model: "gpt-4.1-mini",
 messages: [
 {
 role: "system",

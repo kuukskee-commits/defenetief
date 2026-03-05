@@ -85,7 +85,7 @@ const commands = [
 client.once("ready", async () => {
     console.log(`✅ Online als ${client.user.tag}`);
 
-    const rest = new REST({ version: "10" }).setToken(process.env.DISCORD_TOKEN);
+    const rest = new REST({ version: "10" }).setToken(process.env.TOKEN);
 
     try {
         await rest.put(
@@ -197,11 +197,11 @@ client.on("interactionCreate", async (interaction) => {
 // =========================
 // LOGIN
 // =========================
-console.log("DISCORD_TOKEN =", process.env.DISCORD_TOKEN ? "BESTAAT" : "BESTAAT NIET");
-if (!process.env.DISCORD_TOKEN) {
-    console.error("❌ GEEN DISCORD_TOKEN GEVONDEN");
+console.log("TOKEN =", process.env.TOKEN ? "BESTAAT" : "BESTAAT NIET");
+if (!process.env.TOKEN) {
+    console.error("❌ GEEN TOKEN GEVONDEN");
 } else {
-    client.login(process.env.DISCORD_TOKEN)
+    client.login(process.env.TOKEN)
         .then(() => console.log("🔥 Discord login succesvol"))
         .catch(err => console.error("❌ Login fout:", err));
 }

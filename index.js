@@ -194,7 +194,7 @@ async function updateBanList(guild) {
   if (bans.size > 0) {
 
     banList = bans
-      .map(b => `🚫 **${b.user.tag}** ・ ID: \`${b.user.id}\``)
+      .map(b => `• <@${b.user.id}>`)
       .join("\n");
 
   }
@@ -203,11 +203,6 @@ async function updateBanList(guild) {
 
     .setColor("#ff9900") // ORANJE
     .setTitle("🔨 SERVER BAN DATABASE")
-    .setDescription(
-      `Welkom bij de **live ban database** van **${guild.name}**.\n\n` +
-      `Hier kan je **alle gebande gebruikers** bekijken.\n` +
-      `Deze lijst **update automatisch** wanneer iemand gebanned of ge-unbanned wordt.\n`
-    )
 
     .addFields(
 
@@ -223,15 +218,6 @@ async function updateBanList(guild) {
       {
         name: "🚫 Gebande Gebruikers",
         value: banList,
-        inline: false
-      },
-
-      {
-        name: "🛡️ Moderation Info",
-        value:
-          `• Bans worden automatisch geregistreerd\n` +
-          `• Deze lijst wordt elke **10 seconden** vernieuwd\n` +
-          `• Moderators kunnen gebruikers unbannen via commands`,
         inline: false
       }
 
@@ -283,9 +269,51 @@ client.on("interactionCreate", async interaction => {
     const reason = interaction.options.getString("reden") || "Geen reden";
 
     try {
-      await user.send(
-        `🚫 Je bent gebanned uit **${guild.name}**\n\n📄 Reden: ${reason}\n\n🔓 Unban kopen:\n${PAYPAL_LINK}`
-      );
+const dmEmbed = new EmbedBuilder()
+
+  .setColor("#ff9900")
+  .setTitle("⛔ Je bent geband")
+  .setDescription(
+    `Je bent **permanent verwijderd** uit **${guild.name}**.\n\n` +
+    `Als je denkt dat dit een fout is of je toegang wil terugkrijgen, kan je een **unban aanvraag** doen.`
+  )
+
+  .addFields(
+
+    {
+      name: "🔨 Reden",
+      value: `\`${reason}\``,
+      inline: false
+    },
+
+    {
+      name: "💰 Unban aanvraag",
+      value:
+        `Wil je opnieuw toegang tot de server krijgen?\n\n` +
+        `💳 **Kost:** €30\n` +
+        `💳 **Betaal via PayPal**\n` +
+        `💳 **Vermeld je Discord naam bij de betaling**`,
+      inline: false
+    },
+
+    {
+      name: "🔗 PayPal betaling",
+      value: `${PAYPAL_LINK}`,
+      inline: false
+    }
+
+  )
+
+  .setFooter({
+    text: `${guild.name} • Moderation System`
+  })
+
+  .setTimestamp();
+
+
+try {
+  await user.send({ embeds: [dmEmbed] });
+} catch {}
     } catch {}
 
     await guild.members.ban(user.id, { reason });

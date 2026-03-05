@@ -201,7 +201,7 @@ await guild.members.unban(userId);
 
 try {
 
-const user = await client.users.fetch(userId);
+const user = await client.users.fetch(userId, { force: true });
 
 const unbanEmbed = new EmbedBuilder()
 .setColor("#00ff99")
@@ -210,11 +210,11 @@ const unbanEmbed = new EmbedBuilder()
 .addFields(
 {
 name: "✅ Status",
-value: "Je ban is verwijderd."
+value: "Je ban is verwijderd door een moderator."
 },
 {
-name: "🔗 Server",
-value: "Je kan nu opnieuw joinen via de server invite."
+name: "🔗 Server join",
+value: "[Klik hier om opnieuw te joinen](https://discord.gg/HZ2tpREXKF)"
 }
 )
 .setFooter({ text: "snitches get stitches • Moderation System" })
@@ -222,8 +222,8 @@ value: "Je kan nu opnieuw joinen via de server invite."
 
 await user.send({ embeds: [unbanEmbed] });
 
-} catch (err) {
-console.log("Kon geen unban DM sturen.");
+} catch (error) {
+console.log("❌ Kon geen unban DM sturen:", error.message);
 }
 
 const embed = new EmbedBuilder()

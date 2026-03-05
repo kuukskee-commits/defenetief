@@ -243,37 +243,74 @@ client.on("guildBanRemove", ban => updateBanList(ban.guild));
 // =========================
 // COMMAND HANDLER
 // =========================
-client.on("interactionCreate", async interaction => {
+client.on("interactionCreate", async (interaction) => {
 
-  const guild = interaction.guild;
+  // =========================
+  // SLASH COMMANDS
+  // =========================
+  if (interaction.isChatInputCommand()) {
 
-  // FIX: dropdown eerst verwerken
+    // UNBAN COMMAND
+    if (interaction.commandName === "unban") {
+
+      const bans = await interaction.guild.bans.fetch();
+
+      if (bans.size === 0) {
+        return interaction.reply({
+          content: "✅ Er zijn geen gebande gebruikers.",
+          ephemeral: true
+        });
+      }
+
+      const options = bans.map(b => ({
+        label: b.user.tag,
+        value: b.user.id
+      }));
+
+      const menu = new StringSelectMenuBuilder()
+        .setCustomId("unban_select")
+        .setPlaceholder("Selecteer iemand om te unbannen")
+        .addOptions(options.slice(0, 25));
+
+      const row = new ActionRowBuilder().addComponents(menu);
+
+      return interaction.reply({
+        content: "🔓 Kies iemand om te unbannen:",
+        components: [row],
+        ephemeral: true
+      });
+
+    }
+
+  }
+
+  // =========================
+  // SELECT MENU
+  // =========================
   if (interaction.isStringSelectMenu()) {
 
     if (interaction.customId === "unban_select") {
+
+      await interaction.deferReply({ ephemeral: true });
 
       const userId = interaction.values[0];
 
       try {
 
-        await guild.members.unban(userId);
+        const user = await client.users.fetch(userId);
 
-        const embed = new EmbedBuilder()
-          .setColor("#00ff99")
-          .setTitle("🔓 Gebruiker Unbanned")
-          .setDescription(`✅ **<@${userId}> is succesvol unbanned.**`)
-          .setTimestamp();
+        await interaction.guild.members.unban(userId);
 
-        return interaction.update({
-          embeds: [embed],
-          components: []
+        await interaction.editReply({
+          content: `✅ **${user.tag}** is succesvol geunbanned.`
         });
 
-      } catch {
+      } catch (err) {
 
-        return interaction.update({
-          content: "❌ Kon gebruiker niet unbannen.",
-          components: []
+        console.error(err);
+
+        await interaction.editReply({
+          content: "❌ Unban mislukt."
         });
 
       }
@@ -281,6 +318,8 @@ client.on("interactionCreate", async interaction => {
     }
 
   }
+
+});
 
   if (!interaction.isChatInputCommand()) return;
 

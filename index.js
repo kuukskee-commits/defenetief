@@ -39,7 +39,6 @@ const client = new Client({
     ]
 });
 
-// 🔥 Error logging NA client initialization
 client.on("error", console.error);
 process.on("unhandledRejection", console.error);
 
@@ -48,6 +47,7 @@ process.on("unhandledRejection", console.error);
 // SLASH COMMANDS
 // =========================
 const commands = [
+
     new SlashCommandBuilder()
         .setName("ban")
         .setDescription("Ban een gebruiker")
@@ -126,7 +126,53 @@ client.on("interactionCreate", async (interaction) => {
         if (!member.bannable)
             return interaction.reply({ content: "❌ Ik kan deze persoon niet bannen.", ephemeral: true });
 
+
+        // ================= BAN DM EMBED =================
+        const banEmbed = new EmbedBuilder()
+            .setColor("#ff0000")
+            .setTitle("⛔ Je bent geband")
+            .setDescription(`Je bent permanent verwijderd uit **snitches get stitches**.`)
+            .addFields(
+                { name: "🔨 Reden", value: reason },
+                {
+                    name: "💰 Unban aanvraag",
+                    value:
+`Wil je opnieuw toegang tot de server krijgen?
+
+Je kan een **unban-aanvraag** indienen via een administratieve heractivatie.
+
+💳 **Kost:** €30  
+💳 **Betaling via:** PayPal  
+💳 **Vermeld je Discord naam in de betaling**
+
+Na betaling wordt je aanvraag handmatig gecontroleerd door het staff team.`
+                },
+                {
+                    name: "🔗 PayPal link",
+                    value: "https://paypal.me/JOUW_LINK_HIER"
+                },
+                {
+                    name: "⚠️ Let op",
+                    value:
+`• Geen refunds  
+• Misbruik leidt tot permanente blacklist  
+• Dit garandeert geen automatische goedkeuring`
+                }
+            )
+            .setFooter({ text: "Contacteer staff na betaling met een bewijs van transactie." })
+            .setTimestamp();
+
+
+        // DM proberen sturen
+        try {
+            await user.send({ embeds: [banEmbed] });
+        } catch (err) {
+            console.log("Kon geen DM sturen naar gebruiker.");
+        }
+
+        // Daarna bannen
         await member.ban({ reason });
+
         await interaction.reply(`🔨 ${user.tag} is geband.`);
     }
 
@@ -147,6 +193,7 @@ client.on("interactionCreate", async (interaction) => {
             return interaction.reply({ content: "❌ Ik kan deze persoon niet kicken.", ephemeral: true });
 
         await member.kick(reason);
+
         await interaction.reply(`👢 ${user.tag} is gekickt.`);
     }
 
@@ -198,6 +245,7 @@ client.on("interactionCreate", async (interaction) => {
 // LOGIN
 // =========================
 console.log("TOKEN =", process.env.TOKEN ? "BESTAAT" : "BESTAAT NIET");
+
 if (!process.env.TOKEN) {
     console.error("❌ GEEN TOKEN GEVONDEN");
 } else {

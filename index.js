@@ -1,10 +1,7 @@
 require("dotenv").config();
 const express = require("express");
 const fs = require("fs");
-const OpenAI = require("openai");
-const openai = new OpenAI({
-apiKey: process.env.OPENAI_API_KEY
-});
+
 
 const {
 Client,
@@ -22,7 +19,6 @@ ActivityType
 process.on("uncaughtException", console.error);
 process.on("unhandledRejection", console.error);
 
-const AI_CHANNEL_ID = "1479227581780988108";
 
 
 // LOG CHANNEL
@@ -691,50 +687,6 @@ ephemeral: true
 
 }
 
-
-
-
 });
-
-client.on("messageCreate", async message => {
-
-if (message.author.bot) return;
-
-if (message.channel.id !== AI_CHANNEL_ID) return;
-
-try {
-
-const response = await openai.chat.completions.create({
-model: "gpt-4.1-mini",
-messages: [
-{
-role: "system",
-content: "Je bent een AI chatbot in een Discord server en helpt gebruikers."
-},
-{
-role: "user",
-content: message.content
-}
-]
-});
-
-const reply = response.choices[0].message.content;
-
-if (reply.length > 2000) {
-message.reply(reply.slice(0, 2000));
-} else {
-message.reply(reply);
-}
-
-} catch (error) {
-
-console.error(error);
-
-message.reply("❌ AI error.");
-
-}
-
-});
-
 
 client.login(process.env.TOKEN);

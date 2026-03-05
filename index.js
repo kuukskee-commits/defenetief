@@ -116,7 +116,7 @@ new SlashCommandBuilder()
 .addUserOption(option =>
 option.setName("user").setDescription("De gebruiker").setRequired(true))
 .addStringOption(option =>
-option.setName("tekst").setDescription("Het bericht").setRequired(true))
+option.setName("tekst").setDescription("Het bericht").setRequired(true)),
 
 new SlashCommandBuilder()
 .setName("dmid")
@@ -279,7 +279,7 @@ console.log("Kon geen DM sturen naar gebruiker.");
 
 await guild.members.ban(user.id, { reason });
 
-return interaction.reply(`🔨 ${user.tag} is gebanned.`);
+return interaction.reply({content: `🔨 ${user.tag} is gebanned.`,ephemeral: true});
 
 }
 
@@ -350,10 +350,7 @@ value: b.user.id
 
 const row = new ActionRowBuilder().addComponents(menu);
 
-return interaction.reply({
-content: "Selecteer gebruiker om te unbannen:",
-components: [row]
-});
+return interaction.reply({content: "Selecteer gebruiker om te unbannen:",components: [row],ephemeral: true});
 
 }
 
@@ -376,7 +373,7 @@ await user.roles.remove(roleId);
 }
 }
 
-return interaction.reply(`💰 Donatie rollen verwijderd van ${user.user.tag}`);
+return interaction.reply({content: `💰 Donatie rollen verwijderd van ${user.user.tag}`,ephemeral: true});
 
 }
 

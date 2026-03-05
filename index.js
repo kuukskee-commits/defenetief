@@ -594,6 +594,25 @@ const embed = new EmbedBuilder()
 
 await user.send({ embeds: [embed] });
 
+sendLog(guild, "📩 DM Verstuurd", "#0099ff", [
+{
+name: "👤 Ontvanger",
+value: `<@${user.id}>
+${user.tag}
+${user.id}`
+},
+{
+name: "👮 Moderator",
+value: `<@${interaction.user.id}>
+${interaction.user.tag}
+${interaction.user.id}`
+},
+{
+name: "💬 Bericht",
+value: text
+}
+], user.displayAvatarURL({ dynamic: true }));
+
 return interaction.reply({
 content: `✅ Bericht gestuurd naar ${user.tag}`,
 ephemeral: true
@@ -628,6 +647,25 @@ const embed = new EmbedBuilder()
 .setTimestamp();
 
 await user.send({ embeds: [embed] });
+
+sendLog(guild, "📩 DM via ID Verstuurd", "#00b0f4", [
+{
+name: "👤 Ontvanger",
+value: `<@${user.id}>
+${user.tag}
+${user.id}`
+},
+{
+name: "👮 Moderator",
+value: `<@${interaction.user.id}>
+${interaction.user.tag}
+${interaction.user.id}`
+},
+{
+name: "💬 Bericht",
+value: message
+}
+], user.displayAvatarURL({ dynamic: true }));
 
 return interaction.reply({
 content: "✅ Bericht succesvol gestuurd.",

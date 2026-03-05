@@ -118,6 +118,18 @@ option.setName("user").setDescription("De gebruiker").setRequired(true))
 .addStringOption(option =>
 option.setName("tekst").setDescription("Het bericht").setRequired(true))
 
+new SlashCommandBuilder()
+.setName("dmid")
+.setDescription("📩 Stuur een DM via Discord ID")
+.addStringOption(option =>
+option.setName("id")
+.setDescription("Discord User ID")
+.setRequired(true))
+.addStringOption(option =>
+option.setName("bericht")
+.setDescription("Het bericht")
+.setRequired(true))
+
 ].map(cmd => cmd.toJSON());
 
 client.once("clientReady", async () => {
@@ -469,6 +481,40 @@ ephemeral: true
 
 }
 
+
+if (interaction.commandName === "dmid") {
+
+const id = interaction.options.getString("id");
+const message = interaction.options.getString("bericht");
+
+try {
+
+const user = await client.users.fetch(id);
+
+const embed = new EmbedBuilder()
+.setColor("#00b0f4")
+.setTitle("📩 Bericht van Server Staff")
+.setDescription(message)
+.setFooter({ text: "snitches get stitches" })
+.setTimestamp();
+
+await user.send({ embeds: [embed] });
+
+return interaction.reply({
+content: "✅ Bericht succesvol gestuurd.",
+ephemeral: true
+});
+
+} catch (err) {
+
+return interaction.reply({
+content: "❌ Kon geen DM sturen naar deze gebruiker.",
+ephemeral: true
+});
+
+}
+
+}
 
 });
 

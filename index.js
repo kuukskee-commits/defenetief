@@ -534,7 +534,7 @@ alertChannel.send({ embeds: [embed] });
 
 }
 
-return interaction.reply("✅ Donatie rol succesvol gegeven.");
+return interaction.reply({content: "✅ Donatie rol succesvol gegeven.",ephemeral: true});
 
 }
 

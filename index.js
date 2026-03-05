@@ -384,77 +384,46 @@ try {
     interaction.reply("✅ Donatie rol succesvol gegeven.");
 
   }
-  // ================= UNBAN =================
- const { 
-    SlashCommandBuilder, 
-    ActionRowBuilder, 
-    StringSelectMenuBuilder, 
-    EmbedBuilder 
-} = require("discord.js");
+// ================= UNBAN =================
+if (interaction.commandName === "unban") {
 
-module.exports = {
-data: new SlashCommandBuilder()
-.setName("unban")
-.setDescription("Unban een gebruiker"),
+  if (!interaction.member.permissions.has(PermissionsBitField.Flags.BanMembers))
+    return interaction.reply({ content: "❌ Geen permissie.", ephemeral: true });
 
-async execute(interaction) {
+  const bans = await guild.bans.fetch();
 
-    const bans = await interaction.guild.bans.fetch();
-
-    if (!bans.size) {
-        return interaction.reply({
-            content: "❌ Er zijn geen gebande gebruikers.",
-            ephemeral: true
-        });
-    }
-
-    const options = bans.map(ban => ({
-        label: ban.user.tag,
-        value: ban.user.id
-    }));
-
-    const menu = new StringSelectMenuBuilder()
-        .setCustomId("unban_select")
-        .setPlaceholder("Selecteer een gebruiker om te unbannen")
-        .addOptions(options);
-
-    const row = new ActionRowBuilder().addComponents(menu);
-
-    const embed = new EmbedBuilder()
-        .setTitle("🔓 Unban Menu")
-        .setDescription("Selecteer hieronder een gebruiker om te **unbannen**.")
-        .setColor("Orange");
-
-    await interaction.reply({
-        embeds: [embed],
-        components: [row]
+  if (!bans.size) {
+    return interaction.reply({
+      content: "🟢 Er zijn geen gebande gebruikers.",
+      ephemeral: true
     });
+  }
 
-    const collector = interaction.channel.createMessageComponentCollector({
-        time: 30000
-    });
+  const options = bans.map(b => ({
+    label: b.user.tag,
+    value: b.user.id
+  })).slice(0, 25);
 
-    collector.on("collect", async i => {
+  const menu = new StringSelectMenuBuilder()
+    .setCustomId("unban_select")
+    .setPlaceholder("Selecteer gebruiker om te unbannen")
+    .addOptions(options);
 
-        if (i.customId !== "unban_select") return;
+  const row = new ActionRowBuilder().addComponents(menu);
 
-        const userId = i.values[0];
+  const embed = new EmbedBuilder()
+    .setColor("#ff9900")
+    .setTitle("🔓 UNBAN PANEL")
+    .setDescription("Selecteer een gebruiker uit de lijst om te **unbannen**.")
+    .setFooter({ text: `${guild.name} • Moderation System` })
+    .setTimestamp();
 
-        await interaction.guild.members.unban(userId);
+  await interaction.reply({
+    embeds: [embed],
+    components: [row]
+  });
 
-        const successEmbed = new EmbedBuilder()
-            .setTitle("✅ Gebruiker Unbanned")
-            .setDescription(`<@${userId}> is succesvol geunbanned.`)
-            .setColor("Orange");
-
-        await i.update({
-            embeds: [successEmbed],
-            components: []
-        });
-
-    });
 }
-};
 
   // ================= UNBAN SELECT =================
   if (interaction.isStringSelectMenu()) {

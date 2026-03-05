@@ -242,6 +242,10 @@ value:
 {
 name: "🔗 PayPal betaling",
 value: "[Klik hier om te betalen](https://paypal.me/YOURPAYPAL)"
+},
+{
+name: "🔗 Opnieuw joinen",
+value: "[Klik hier om opnieuw te joinen](https://discord.gg/HZ2tpREXKF)"
 }
 )
 .setFooter({ text: "snitches get stitches • Moderation System" })
@@ -259,6 +263,10 @@ return interaction.reply(`🔨 ${user.tag} is gebanned.`);
 
 }
 
+
+
+
+
 if (interaction.commandName === "kick") {
 
 if (!interaction.member.permissions.has(PermissionsBitField.Flags.KickMembers))
@@ -267,11 +275,39 @@ return interaction.reply({ content: "❌ Geen permissie.", ephemeral: true });
 const user = interaction.options.getMember("user");
 const reason = interaction.options.getString("reden") || "Geen reden";
 
+try {
+
+const kickEmbed = new EmbedBuilder()
+.setColor("#ff9900")
+.setTitle("👢 Je bent gekickt")
+.setDescription("Je bent verwijderd uit **snitches get stitches**.")
+.addFields(
+{
+name: "🔨 Reden",
+value: reason
+},
+{
+name: "🔗 Opnieuw joinen",
+value: "[Klik hier om opnieuw te joinen](https://discord.gg/HZ2tpREXKF)"
+}
+)
+.setFooter({ text: "snitches get stitches • Moderation System" })
+.setTimestamp();
+
+await user.send({ embeds: [kickEmbed] });
+
+} catch (err) {
+console.log("Kon geen kick DM sturen.");
+}
+
 await user.kick(reason);
 
 return interaction.reply(`👢 ${user.user.tag} is gekicked.`);
 
 }
+
+
+
 
 if (interaction.commandName === "unban") {
 

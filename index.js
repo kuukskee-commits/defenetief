@@ -1,7 +1,7 @@
 require("dotenv").config();
 
 // =========================
-// EXPRESS SERVER (VOOR RENDER)
+// EXPRESS SERVER
 // =========================
 const express = require("express");
 const app = express();
@@ -21,23 +21,23 @@ app.listen(PORT, () => {
 // DISCORD SETUP
 // =========================
 const {
-    Client,
-    GatewayIntentBits,
-    PermissionsBitField,
-    EmbedBuilder,
-    ActionRowBuilder,
-    StringSelectMenuBuilder,
-    REST,
-    Routes,
-    SlashCommandBuilder,
-    ActivityType
+Client,
+GatewayIntentBits,
+PermissionsBitField,
+EmbedBuilder,
+ActionRowBuilder,
+StringSelectMenuBuilder,
+REST,
+Routes,
+SlashCommandBuilder,
+ActivityType
 } = require("discord.js");
 
 const client = new Client({
-    intents: [
-        GatewayIntentBits.Guilds,
-        GatewayIntentBits.GuildMembers
-    ]
+intents: [
+GatewayIntentBits.Guilds,
+GatewayIntentBits.GuildMembers
+]
 });
 
 client.on("error", console.error);
@@ -74,8 +74,7 @@ option.setName("user")
 .setRequired(true))
 .addStringOption(option =>
 option.setName("reden")
-.setDescription("Reden van ban")
-.setRequired(false)),
+.setDescription("Reden van ban")),
 
 new SlashCommandBuilder()
 .setName("kick")
@@ -86,8 +85,7 @@ option.setName("user")
 .setRequired(true))
 .addStringOption(option =>
 option.setName("reden")
-.setDescription("Reden van kick")
-.setRequired(false)),
+.setDescription("Reden van kick")),
 
 new SlashCommandBuilder()
 .setName("unban")
@@ -150,7 +148,7 @@ process.env.GUILD_ID
 console.log("✅ Slash commands geregistreerd.");
 
 } catch (error) {
-console.error("❌ Fout bij slash registratie:", error);
+console.error("❌ Slash registratie fout:", error);
 }
 
 setInterval(() => {
@@ -183,7 +181,7 @@ const embed = new EmbedBuilder()
 .setDescription("Live overzicht van alle bans")
 .addFields(
 { name: "📊 Totaal bans", value: `**${bans.size}**`, inline:true },
-{ name: "👥 Gebande users", value: banList }
+{ name: "👥 Gebande gebruikers", value: banList }
 )
 .setTimestamp();
 
@@ -223,7 +221,7 @@ if (!interaction.memberPermissions.has(PermissionsBitField.Flags.BanMembers))
 return interaction.editReply("❌ Geen permissie.");
 
 const user = interaction.options.getUser("user");
-const reason = interaction.options.getString("reden") || "Geen reden.";
+const reason = interaction.options.getString("reden") || "Geen reden";
 
 const member = await interaction.guild.members.fetch(user.id).catch(()=>null);
 
@@ -232,7 +230,6 @@ if(!member) return interaction.editReply("❌ User niet gevonden.");
 await member.ban({reason});
 
 interaction.editReply(`🔨 ${user.tag} is geband.`);
-
 }
 
 
@@ -252,7 +249,6 @@ if(!member) return interaction.editReply("❌ User niet gevonden.");
 await member.kick();
 
 interaction.editReply(`👢 ${user.tag} is gekickt.`);
-
 }
 
 
@@ -268,8 +264,7 @@ const roles = member.roles.cache.filter(r => r.id !== interaction.guild.id);
 
 await member.roles.remove(roles);
 
-interaction.editReply(`🧹 Rollen verwijderd van ${user.tag}`);
-
+interaction.editReply(`🧹 Alle rollen verwijderd van ${user.tag}`);
 }
 
 
@@ -286,7 +281,6 @@ const roles = member.roles.cache.filter(r => DONATION_ROLES.includes(r.id));
 await member.roles.remove(roles);
 
 interaction.editReply(`💸 Donatie rollen verwijderd van ${user.tag}`);
-
 }
 
 
@@ -305,24 +299,15 @@ const menu = new StringSelectMenuBuilder()
 .setCustomId(`dono_select_${user.id}`)
 .setPlaceholder("Selecteer donatie rol")
 .addOptions([
-{
-label:"Perms +",
-value:"1478887899695939714"
-},
-{
-label:"Perms ++",
-value:"1478887958537830523"
-},
-{
-label:"Perms +++",
-value:"1478888005635674254"
-}
+{ label:"Perms +", value:"1478887899695939714" },
+{ label:"Perms ++", value:"1478887958537830523" },
+{ label:"Perms +++", value:"1478888005635674254" }
 ]);
 
 const row = new ActionRowBuilder().addComponents(menu);
 
 await interaction.reply({
-content:`Selecteer een rol voor **${user.tag}**`,
+content:`Selecteer een donatie rol voor **${user.tag}**`,
 components:[row],
 ephemeral:true
 });
@@ -342,17 +327,48 @@ await member.roles.add(roleId);
 
 let donoText = "";
 
-if(roleId === "1478887899695939714") donoText = "Donatie allert, Perms +";
-if(roleId === "1478887958537830523") donoText = "Donatie allert, Perms ++";
-if(roleId === "1478888005635674254") donoText = "Donatie allert, Perms +++";
+if(roleId === "1478887899695939714") donoText = "Perms +";
+if(roleId === "1478887958537830523") donoText = "Perms ++";
+if(roleId === "1478888005635674254") donoText = "Perms +++";
 
 const channel = interaction.guild.channels.cache.get(DONATION_ALERT_CHANNEL);
 
 if(channel){
-channel.send(`💰 **Nieuwe Donatie!**
 
-👤 ${member}
-📦 ${donoText}`);
+const embed = new EmbedBuilder()
+.setColor("#00ff9d")
+.setTitle("💰 Nieuwe Donatie Ontvangen!")
+.setDescription(
+`🔥 **Bedankt voor de support!**
+
+Een nieuwe donatie is zojuist verwerkt.
+Dankzij deze support kunnen we de server blijven verbeteren ❤️`
+)
+.addFields(
+{
+name:"👤 Donateur",
+value:`${member}`,
+inline:true
+},
+{
+name:"🎁 Donatie Pakket",
+value:`${donoText}`,
+inline:true
+},
+{
+name:"🚀 Bedankt!",
+value:`Veel plezier met je nieuwe perks!
+Wij waarderen iedere supporter enorm.`
+}
+)
+.setThumbnail(member.user.displayAvatarURL({dynamic:true}))
+.setFooter({
+text:"Snitches Get Stitches • Donatie Systeem"
+})
+.setTimestamp();
+
+channel.send({embeds:[embed]});
+
 }
 
 await interaction.update({
@@ -397,7 +413,7 @@ const id = interaction.values[0];
 await interaction.guild.members.unban(id);
 
 interaction.update({
-content:"✅ User ge-unbanned.",
+content:"✅ Gebruiker ge-unbanned.",
 components:[]
 });
 
@@ -413,6 +429,6 @@ if (!process.env.TOKEN) {
 console.error("❌ GEEN TOKEN");
 } else {
 client.login(process.env.TOKEN)
-.then(()=>console.log("🔥 Bot online"))
+.then(()=>console.log("🔥 Discord bot online"))
 .catch(console.error);
 }

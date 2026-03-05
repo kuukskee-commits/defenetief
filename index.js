@@ -384,7 +384,75 @@ try {
     interaction.reply("✅ Donatie rol succesvol gegeven.");
 
   }
+  // ================= UNBAN =================
+  if (interaction.commandName === "unban") {
 
+    if (!interaction.member.permissions.has(PermissionsBitField.Flags.BanMembers))
+      return interaction.reply({ content: "❌ Geen permissie.", ephemeral: true });
+
+    const bans = await guild.bans.fetch();
+
+    if (bans.size === 0) {
+      return interaction.reply({
+        content: "🟢 Er zijn momenteel geen gebande gebruikers.",
+        ephemeral: true
+      });
+    }
+
+    const options = bans.map(ban => ({
+      label: ban.user.tag,
+      value: ban.user.id
+    }));
+
+    const menu = new StringSelectMenuBuilder()
+      .setCustomId("unban_select")
+      .setPlaceholder("Selecteer gebruiker om te unbannen")
+      .addOptions(options.slice(0, 25));
+
+    const row = new ActionRowBuilder().addComponents(menu);
+
+    return interaction.reply({
+      content: "🔓 Kies een gebruiker om te **unbannen**:",
+      components: [row],
+      ephemeral: true
+    });
+
+  }
+
+  // ================= UNBAN SELECT =================
+  if (interaction.isStringSelectMenu()) {
+
+    if (interaction.customId === "unban_select") {
+
+      const userId = interaction.values[0];
+
+      try {
+
+        await interaction.guild.members.unban(userId);
+
+        const embed = new EmbedBuilder()
+          .setColor("#00ff99")
+          .setTitle("🔓 Gebruiker Unbanned")
+          .setDescription(`✅ **<@${userId}> is succesvol unbanned.**`)
+          .setTimestamp();
+
+        await interaction.update({
+          embeds: [embed],
+          components: []
+        });
+
+      } catch {
+
+        await interaction.update({
+          content: "❌ Kon gebruiker niet unbannen.",
+          components: []
+        });
+
+      }
+
+    }
+
+  }
 
   // ================= CONFIG DONO =================
   if (interaction.commandName === "configdono") {

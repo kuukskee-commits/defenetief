@@ -17,6 +17,13 @@ const {
 
 
 // =========================
+// ANTI CRASH
+// =========================
+process.on("uncaughtException", console.error);
+process.on("unhandledRejection", console.error);
+
+
+// =========================
 // EXPRESS SERVER
 // =========================
 const app = express();
@@ -37,10 +44,14 @@ app.listen(PORT, () => {
 const CONFIG_FILE = "./config.json";
 
 function loadConfig() {
-  if (!fs.existsSync(CONFIG_FILE)) {
-    fs.writeFileSync(CONFIG_FILE, JSON.stringify({ donationMessages: {} }, null, 2));
+  try {
+    if (!fs.existsSync(CONFIG_FILE)) {
+      fs.writeFileSync(CONFIG_FILE, JSON.stringify({ donationMessages: {} }, null, 2));
+    }
+    return JSON.parse(fs.readFileSync(CONFIG_FILE));
+  } catch {
+    return { donationMessages: {} };
   }
-  return JSON.parse(fs.readFileSync(CONFIG_FILE));
 }
 
 function saveConfig(data) {
@@ -59,9 +70,6 @@ const client = new Client({
     GatewayIntentBits.GuildMembers
   ]
 });
-
-client.on("error", console.error);
-process.on("unhandledRejection", console.error);
 
 
 // =========================
@@ -141,7 +149,7 @@ const commands = [
 // =========================
 // READY EVENT
 // =========================
-client.once("clientReady", async () => {
+client.once("ready", async () => {
 
   console.log(`✅ Bot online als ${client.user.tag}`);
 
@@ -172,9 +180,13 @@ client.once("clientReady", async () => {
   }
 
   setInterval(() => {
-    const guild = client.guilds.cache.get(process.env.GUILD_ID);
-    if (guild) updateBanList(guild);
-  }, 10000);
+    try {
+      const guild = client.guilds.cache.get(process.env.GUILD_ID);
+      if (guild) updateBanList(guild);
+    } catch (e) {
+      console.error("Ban list update error:", e);
+    }
+  }, 15000);
 
 });
 
@@ -184,54 +196,60 @@ client.once("clientReady", async () => {
 // =========================
 async function updateBanList(guild) {
 
-  const channel = guild.channels.cache.get(BANNED_CHANNEL);
-  if (!channel) return;
+  try {
 
-  const bans = await guild.bans.fetch();
+    const channel = guild.channels.cache.get(BANNED_CHANNEL);
+    if (!channel) return;
 
-  let banList = "🟢 **Er zijn momenteel geen gebande gebruikers.**";
+    const bans = await guild.bans.fetch();
 
-  if (bans.size > 0) {
-    banList = bans.map(b => `• <@${b.user.id}>`).join("\n");
-  }
+    let banList = "🟢 **Er zijn momenteel geen gebande gebruikers.**";
 
-  const embed = new EmbedBuilder()
+    if (bans.size > 0) {
+      banList = bans.map(b => `• <@${b.user.id}>`).join("\n");
+    }
 
-    .setColor("#ff9900")
-    .setTitle("🔨 SERVER BAN DATABASE")
+    const embed = new EmbedBuilder()
 
-    .addFields(
-      {
-        name: "📊 Server Statistieken",
-        value:
-          `🔹 **Totaal bans:** \`${bans.size}\`\n` +
-          `🔹 **Server leden:** \`${guild.memberCount}\`\n` +
-          `🔹 **Server naam:** ${guild.name}`,
-        inline: false
-      },
-      {
-        name: "🚫 Gebande Gebruikers",
-        value: banList,
-        inline: false
-      }
-    )
+      .setColor("#ff9900")
+      .setTitle("🔨 SERVER BAN DATABASE")
 
-    .setThumbnail(guild.iconURL({ dynamic: true }))
-    .setFooter({
-      text: `${guild.name} • Moderation System`,
-      iconURL: guild.iconURL({ dynamic: true })
-    })
-    .setTimestamp();
+      .addFields(
+        {
+          name: "📊 Server Statistieken",
+          value:
+            `🔹 **Totaal bans:** \`${bans.size}\`\n` +
+            `🔹 **Server leden:** \`${guild.memberCount}\`\n` +
+            `🔹 **Server naam:** ${guild.name}`,
+          inline: false
+        },
+        {
+          name: "🚫 Gebande Gebruikers",
+          value: banList,
+          inline: false
+        }
+      )
 
-  if (!bannedMessage) {
-    const msgs = await channel.messages.fetch({ limit: 10 });
-    bannedMessage = msgs.find(m => m.author.id === client.user.id);
-  }
+      .setThumbnail(guild.iconURL({ dynamic: true }))
+      .setFooter({
+        text: `${guild.name} • Moderation System`,
+        iconURL: guild.iconURL({ dynamic: true })
+      })
+      .setTimestamp();
 
-  if (!bannedMessage) {
-    bannedMessage = await channel.send({ embeds: [embed] });
-  } else {
-    await bannedMessage.edit({ embeds: [embed] });
+    if (!bannedMessage) {
+      const msgs = await channel.messages.fetch({ limit: 10 });
+      bannedMessage = msgs.find(m => m.author.id === client.user.id);
+    }
+
+    if (!bannedMessage) {
+      bannedMessage = await channel.send({ embeds: [embed] });
+    } else {
+      await bannedMessage.edit({ embeds: [embed] });
+    }
+
+  } catch (error) {
+    console.error("Ban embed error:", error);
   }
 
 }
@@ -241,147 +259,161 @@ client.on("guildBanRemove", ban => updateBanList(ban.guild));
 
 
 // =========================
-// COMMAND HANDLER
+// INTERACTION HANDLER
 // =========================
 client.on("interactionCreate", async interaction => {
 
-  const guild = interaction.guild;
+  try {
 
-  // FIX: dropdown eerst verwerken
-  if (interaction.isStringSelectMenu()) {
+    const guild = interaction.guild;
+    if (!guild) return;
 
-    if (interaction.customId === "unban_select") {
+    if (interaction.isStringSelectMenu()) {
 
-      const userId = interaction.values[0];
+      if (interaction.customId === "unban_select") {
 
-      try {
+        const userId = interaction.values[0];
 
-        await guild.members.unban(userId);
+        try {
 
-        const embed = new EmbedBuilder()
-          .setColor("#00ff99")
-          .setTitle("🔓 Gebruiker Unbanned")
-          .setDescription(`✅ **<@${userId}> is succesvol unbanned.**`)
-          .setTimestamp();
+          await guild.members.unban(userId);
 
-        return interaction.update({
-          embeds: [embed],
-          components: []
-        });
+          const embed = new EmbedBuilder()
+            .setColor("#00ff99")
+            .setTitle("🔓 Gebruiker Unbanned")
+            .setDescription(`✅ **<@${userId}> is succesvol unbanned.**`)
+            .setTimestamp();
 
-      } catch {
+          return interaction.update({
+            embeds: [embed],
+            components: []
+          });
 
-        return interaction.update({
-          content: "❌ Kon gebruiker niet unbannen.",
-          components: []
-        });
+        } catch {
+
+          return interaction.update({
+            content: "❌ Kon gebruiker niet unbannen.",
+            components: []
+          });
+
+        }
 
       }
 
     }
 
-  }
+    if (!interaction.isChatInputCommand()) return;
 
-  if (!interaction.isChatInputCommand()) return;
+    if (interaction.commandName === "ban") {
 
-  // ================= BAN =================
-  if (interaction.commandName === "ban") {
+      if (!interaction.member.permissions.has(PermissionsBitField.Flags.BanMembers))
+        return interaction.reply({ content: "❌ Geen permissie.", ephemeral: true });
 
-    if (!interaction.member.permissions.has(PermissionsBitField.Flags.BanMembers))
-      return interaction.reply({ content: "❌ Geen permissie.", ephemeral: true });
-
-    const user = interaction.options.getUser("user");
-    const reason = interaction.options.getString("reden") || "Geen reden";
-
-    try {
-
-      const dmEmbed = new EmbedBuilder()
-        .setColor("#ff9900")
-        .setTitle("⛔ Je bent geband")
-        .setDescription(
-          `Je bent **permanent verwijderd** uit **${guild.name}**.\n\n` +
-          `Als je denkt dat dit een fout is of je toegang wil terugkrijgen, kan je een **unban aanvraag** doen.`
-        )
-        .addFields(
-          {
-            name: "🔨 Reden",
-            value: `\`${reason}\``
-          },
-          {
-            name: "💰 Unban aanvraag",
-            value:
-              `💳 **Kost:** €30\n` +
-              `💳 **Betaal via PayPal**\n` +
-              `💳 **Vermeld je Discord naam bij betaling**`
-          },
-          {
-            name: "🔗 PayPal betaling",
-            value: PAYPAL_LINK
-          }
-        )
-        .setFooter({ text: `${guild.name} • Moderation System` })
-        .setTimestamp();
+      const user = interaction.options.getUser("user");
+      const reason = interaction.options.getString("reden") || "Geen reden";
 
       try {
-        await user.send({ embeds: [dmEmbed] });
+
+        const dmEmbed = new EmbedBuilder()
+          .setColor("#ff9900")
+          .setTitle("⛔ Je bent geband")
+          .setDescription(
+            `Je bent **permanent verwijderd** uit **${guild.name}**.\n\n` +
+            `Als je denkt dat dit een fout is of je toegang wil terugkrijgen, kan je een **unban aanvraag** doen.`
+          )
+          .addFields(
+            {
+              name: "🔨 Reden",
+              value: `\`${reason}\``
+            },
+            {
+              name: "💰 Unban aanvraag",
+              value:
+                `💳 **Kost:** €30\n` +
+                `💳 **Betaal via PayPal**\n` +
+                `💳 **Vermeld je Discord naam bij betaling**`
+            },
+            {
+              name: "🔗 PayPal betaling",
+              value: PAYPAL_LINK
+            }
+          )
+          .setFooter({ text: `${guild.name} • Moderation System` })
+          .setTimestamp();
+
+        await user.send({ embeds: [dmEmbed] }).catch(() => {});
+
       } catch {}
 
-    } catch {}
-
-    await guild.members.ban(user.id, { reason });
-
-    const embed = new EmbedBuilder()
-      .setColor("#ff0000")
-      .setTitle("🔨 Gebruiker gebanned")
-      .addFields(
-        { name: "👤 Gebruiker", value: `${user.tag}`, inline: true },
-        { name: "📄 Reden", value: reason, inline: true }
-      )
-      .setTimestamp();
-
-    interaction.reply({ embeds: [embed] });
-
-  }
-
-
-  // ================= ADD DONO =================
-  if (interaction.commandName === "adddono") {
-
-    if (!interaction.member.roles.cache.has(DONO_HANDLER_ROLE))
-      return interaction.reply({ content: "❌ Geen permissie.", ephemeral: true });
-
-    const user = interaction.options.getMember("user");
-    const role = interaction.options.getRole("role");
-
-    await user.roles.add(role);
-
-    const alertChannel = guild.channels.cache.get(DONATION_ALERT_CHANNEL);
-
-    const message =
-      config.donationMessages[role.id] ||
-      "❤️ Bedankt voor het steunen van de server!";
-
-    if (alertChannel) {
+      await guild.members.ban(user.id, { reason });
 
       const embed = new EmbedBuilder()
-        .setColor("#00ff9d")
-        .setTitle("💸 Nieuwe Donatie!")
-        .setDescription(`🎉 **${user} heeft zojuist gedoneerd!**`)
+        .setColor("#ff0000")
+        .setTitle("🔨 Gebruiker gebanned")
         .addFields(
-          { name: "👤 Donateur", value: `${user}`, inline: true },
-          { name: "💎 Donatie Tier", value: `${role}`, inline: true },
-          { name: "💬 Bericht", value: message }
+          { name: "👤 Gebruiker", value: `${user.tag}`, inline: true },
+          { name: "📄 Reden", value: reason, inline: true }
         )
-        .setThumbnail(user.displayAvatarURL({ dynamic: true }))
-        .setFooter({ text: "Dankjewel voor de support ❤️" })
         .setTimestamp();
 
-      alertChannel.send({ embeds: [embed] });
+      interaction.reply({ embeds: [embed] });
 
     }
 
-    interaction.reply("✅ Donatie rol succesvol gegeven.");
+    if (interaction.commandName === "adddono") {
 
+      if (!interaction.member.roles.cache.has(DONO_HANDLER_ROLE))
+        return interaction.reply({ content: "❌ Geen permissie.", ephemeral: true });
+
+      const user = interaction.options.getMember("user");
+      const role = interaction.options.getRole("role");
+
+      if (!user) return interaction.reply({ content: "❌ Gebruiker niet gevonden.", ephemeral: true });
+
+      await user.roles.add(role);
+
+      const alertChannel = guild.channels.cache.get(DONATION_ALERT_CHANNEL);
+
+      const message =
+        config.donationMessages[role.id] ||
+        "❤️ Bedankt voor het steunen van de server!";
+
+      if (alertChannel) {
+
+        const embed = new EmbedBuilder()
+          .setColor("#00ff9d")
+          .setTitle("💸 Nieuwe Donatie!")
+          .setDescription(`🎉 **${user} heeft zojuist gedoneerd!**`)
+          .addFields(
+            { name: "👤 Donateur", value: `${user}`, inline: true },
+            { name: "💎 Donatie Tier", value: `${role}`, inline: true },
+            { name: "💬 Bericht", value: message }
+          )
+          .setThumbnail(user.displayAvatarURL({ dynamic: true }))
+          .setFooter({ text: "Dankjewel voor de support ❤️" })
+          .setTimestamp();
+
+        alertChannel.send({ embeds: [embed] });
+
+      }
+
+      interaction.reply("✅ Donatie rol succesvol gegeven.");
+
+    }
+
+  } catch (error) {
+    console.error("Interaction error:", error);
   }
 
 });
+
+
+// =========================
+// LOGIN
+// =========================
+if (!process.env.TOKEN) {
+  console.error("❌ TOKEN ontbreekt in .env");
+  process.exit(1);
+}
+
+client.login(process.env.TOKEN);

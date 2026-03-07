@@ -266,15 +266,26 @@ await guild.members.fetch();
 
 const members = guild.members.cache.filter(m => !m.user.bot);
 
-let description = "";
+let online = [];
+let idle = [];
+let dnd = [];
+let offline = [];
 
 members.forEach(member => {
 
 const presence = member.presence;
 
-let status = "⚫ Offline";
+let text = "";
 
-if (presence) {
+if (!presence) {
+
+text = `⚫ **${member.user.username}** — Offline`;
+offline.push(text);
+return;
+
+}
+
+let activityText = "";
 
 if (presence.activities.length > 0) {
 
@@ -283,60 +294,81 @@ const activity = presence.activities[0];
 switch (activity.type) {
 
 case 0:
-status = `🎮 Playing ${activity.name}`;
+activityText = `🎮 Playing **${activity.name}**`;
 break;
 
 case 1:
-status = `📺 Streaming ${activity.name}`;
+activityText = `📺 Streaming **${activity.name}**`;
 break;
 
 case 2:
-status = `🎧 Listening to ${activity.name}`;
+activityText = `🎧 Listening to **${activity.name}**`;
 break;
 
 case 3:
-status = `👀 Watching ${activity.name}`;
+activityText = `👀 Watching **${activity.name}**`;
 break;
 
 case 4:
-status = `💬 ${activity.state || activity.name}`;
+activityText = `💬 ${activity.state || activity.name}`;
 break;
 
 default:
-status = "🟢 Online";
+activityText = "🟢 Online";
 
 }
 
-} else {
+}
 
 switch (presence.status) {
 
 case "online":
-status = "🟢 Online";
+text = `🟢 **${member.user.username}** — ${activityText || "Online"}`;
+online.push(text);
 break;
 
 case "idle":
-status = "🌙 Idle";
+text = `🌙 **${member.user.username}** — ${activityText || "Idle"}`;
+idle.push(text);
 break;
 
 case "dnd":
-status = "⛔ Do Not Disturb";
+text = `⛔ **${member.user.username}** — ${activityText || "Do Not Disturb"}`;
+dnd.push(text);
 break;
 
-}
+default:
+text = `⚫ **${member.user.username}** — Offline`;
+offline.push(text);
 
 }
-
-}
-
-description += `👤 **${member.user.username}** — ${status}\n`;
 
 });
 
+const description =
+[
+online.join("\n"),
+idle.join("\n"),
+dnd.join("\n"),
+offline.join("\n")
+].filter(Boolean).join("\n");
+
 const embed = new EmbedBuilder()
-.setColor("#2b2d31")
-.setTitle("👥 Server Activiteit")
+.setColor("#5865F2")
+.setTitle(`👥 ${guild.name} • Server Activiteit`)
+.setThumbnail(guild.iconURL({ dynamic: true }))
 .setDescription(description || "Geen leden gevonden.")
+.addFields(
+{
+name: "📊 Server Stats",
+value:
+`👤 Leden: **${members.size}**\n` +
+`🟢 Online: **${online.length}**\n` +
+`🌙 Idle: **${idle.length}**\n` +
+`⛔ DND: **${dnd.length}**`
+}
+)
+.setFooter({ text: "Live server activiteit" })
 .setTimestamp();
 
 const messages = await channel.messages.fetch({ limit: 10 });
@@ -344,7 +376,7 @@ const messages = await channel.messages.fetch({ limit: 10 });
 const existing = messages.find(m =>
 m.author.id === client.user.id &&
 m.embeds.length > 0 &&
-m.embeds[0].title === "👥 Server Activiteit"
+m.embeds[0].title?.includes("Server Activiteit")
 );
 
 if (existing) {
@@ -356,7 +388,6 @@ await existing.edit({ embeds: [embed] });
 await channel.send({ embeds: [embed] });
 
 }
-
 }
 
 client.on("interactionCreate", async interaction => {

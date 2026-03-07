@@ -198,7 +198,7 @@ console.log(`✅ Bot online als ${client.user.tag}`);
 
 client.user.setPresence({
 activities: [{ name: "💸 Donaties verwerken", type: ActivityType.Playing }],
-status: "online"
+status: "dnd"
 });
 
 const rest = new REST({ version: "10" }).setToken(process.env.TOKEN);

@@ -170,6 +170,7 @@ new SlashCommandBuilder()
 .addChannelOption(option =>
 option.setName("channel")
 .setDescription("Voice kanaal")
+.addChannelTypes(ChannelType.GuildVoice)
 .setRequired(true))
 .addIntegerOption(option =>
 option.setName("aantal")

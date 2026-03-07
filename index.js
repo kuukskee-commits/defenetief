@@ -23,6 +23,7 @@ process.on("unhandledRejection", console.error);
 
 // LOG CHANNEL
 const LOG_CHANNEL = "1479215303123538021";
+const MEMBER_ACTIVITY_CHANNEL = "1478865017746227283";
 
 // Log functie
 function sendLog(guild, title, color, fields, avatar = null) {
@@ -195,8 +196,14 @@ Routes.applicationGuildCommands(process.env.CLIENT_ID, process.env.GUILD_ID),
 console.log("✅ Slash commands succesvol geregistreerd");
 
 setInterval(() => {
+
 const guild = client.guilds.cache.get(process.env.GUILD_ID);
-if (guild) updateBanList(guild);
+
+if (guild) {
+updateBanList(guild);
+updateMemberActivity(guild);
+}
+
 }, 15000);
 
 });
@@ -777,6 +784,109 @@ return interaction.reply({
 content: "❌ Kon geen DM sturen naar deze gebruiker.",
 ephemeral: true
 });
+
+}
+
+}
+
+let memberActivityMessage = null;
+
+async function updateMemberActivity(guild) {
+
+const channel = guild.channels.cache.get(MEMBER_ACTIVITY_CHANNEL);
+if (!channel) return;
+
+await guild.members.fetch();
+
+const members = guild.members.cache
+.filter(m => !m.user.bot);
+
+let list = "";
+
+members.forEach(member => {
+
+let status = "💤 Idle";
+
+if (member.presence) {
+
+const activity = member.presence.activities[0];
+
+if (activity) {
+
+switch(activity.type) {
+
+case 0:
+status = `🎮 Speelt **${activity.name}**`;
+break;
+
+case 1:
+status = `📡 Streamt **${activity.name}**`;
+break;
+
+case 2:
+status = `🎧 Luistert naar **${activity.name}**`;
+break;
+
+case 3:
+status = `📺 Kijkt **${activity.name}**`;
+break;
+
+default:
+status = `🟢 Online`;
+}
+
+} else {
+
+switch(member.presence.status) {
+
+case "online":
+status = "🟢 Online";
+break;
+
+case "idle":
+status = "🌙 Idle";
+break;
+
+case "dnd":
+status = "⛔ Do Not Disturb";
+break;
+
+default:
+status = "⚫ Offline";
+
+}
+
+}
+
+}
+
+list += `**${member.user.username}** — ${status}\n`;
+
+});
+
+if (list.length === 0) list = "Geen leden gevonden.";
+
+const embed = new EmbedBuilder()
+.setColor("#2b2d31")
+.setTitle("👥 Server Leden Activiteit")
+.setDescription(list)
+.setFooter({ text: `Totaal leden: ${members.size}` })
+.setTimestamp();
+
+if (!memberActivityMessage) {
+
+const msgs = await channel.messages.fetch({ limit: 10 });
+memberActivityMessage = msgs.find(m => m.author.id === client.user.id);
+
+}
+
+if (!memberActivityMessage) {
+
+memberActivityMessage = await channel.send({ embeds: [embed] });
+
+} else {
+
+await memberActivityMessage.edit({ embeds: [embed] });
 
 }
 

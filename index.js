@@ -916,11 +916,11 @@ guildId: interaction.guild.id,
 adapterCreator: interaction.guild.voiceAdapterCreator
 });
 
-await new Promise(r => setTimeout(r, 400));
+await new Promise(r => setTimeout(r, 1500));
 
 connection.destroy();
 
-await new Promise(r => setTimeout(r, 200));
+await new Promise(r => setTimeout(r, 1000));
 
 }
 await interaction.editReply(`✅ Klaar! Ik ben **${amount} keer** gejoined en geleaved in ${channel}.`);

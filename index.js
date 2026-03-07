@@ -347,11 +347,11 @@ offline.push(text);
 
 const description =
 [
-online.join("\n"),
-idle.join("\n"),
-dnd.join("\n"),
-offline.join("\n")
-].filter(Boolean).join("\n");
+online.join("\n\n"),
+idle.join("\n\n"),
+dnd.join("\n\n"),
+offline.join("\n\n")
+].filter(Boolean).join("\n\n");
 
 const embed = new EmbedBuilder()
 .setColor("#5865F2")

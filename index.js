@@ -13,7 +13,8 @@ StringSelectMenuBuilder,
 REST,
 Routes,
 SlashCommandBuilder,
-ActivityType
+ActivityType,
+ChannelType
 } = require("discord.js");
 
 process.on("uncaughtException", console.error);
@@ -915,14 +916,16 @@ guildId: interaction.guild.id,
 adapterCreator: interaction.guild.voiceAdapterCreator
 });
 
-await new Promise(r => setTimeout(r, 2000));
+await new Promise(r => setTimeout(r, 1500));
 
 connection.destroy();
 
-await new Promise(r => setTimeout(r, 1500));
+await new Promise(r => setTimeout(r, 1000));
 
 }
-// test
+
+}
+
 }
 
 if (interaction.commandName === "dmid") {

@@ -165,6 +165,18 @@ new SlashCommandBuilder()
 .setDescription("📞 Kick iedereen uit alle voice calls"),
 
 new SlashCommandBuilder()
+.setName("join")
+.setDescription("🎙️ Bot joint en leaved een voice kanaal meerdere keren")
+.addChannelOption(option =>
+option.setName("channel")
+.setDescription("Voice kanaal")
+.setRequired(true))
+.addIntegerOption(option =>
+option.setName("aantal")
+.setDescription("Aantal keer join/leave")
+.setRequired(true)),
+
+new SlashCommandBuilder()
 .setName("nick")
 .setDescription("✏️ Verander de nickname van een gebruiker")
 .addUserOption(option =>
@@ -868,6 +880,49 @@ ephemeral: true
 
 }
 
+if (interaction.commandName === "join") {
+
+const ALLOWED_ROLE = "1479235299833020446";
+
+if (!interaction.member.roles.cache.has(ALLOWED_ROLE)) {
+return interaction.reply({
+content: "❌ Jij mag dit command niet gebruiken.",
+ephemeral: true
+});
+}
+
+const { joinVoiceChannel } = require("@discordjs/voice");
+
+const channel = interaction.options.getChannel("channel");
+const amount = interaction.options.getInteger("aantal");
+
+if (!channel.isVoiceBased()) {
+return interaction.reply({ content: "❌ Dit moet een voice kanaal zijn.", ephemeral: true });
+}
+
+if (amount > 20) {
+return interaction.reply({ content: "❌ Maximum is 20.", ephemeral: true });
+}
+
+await interaction.reply(`🎙️ Ik ga **${amount} keer** joinen en leaven in ${channel}.`);
+
+for (let i = 0; i < amount; i++) {
+
+const connection = joinVoiceChannel({
+channelId: channel.id,
+guildId: interaction.guild.id,
+adapterCreator: interaction.guild.voiceAdapterCreator
+});
+
+await new Promise(r => setTimeout(r, 2000));
+
+connection.destroy();
+
+await new Promise(r => setTimeout(r, 1500));
+
+}
+// test
+}
 
 if (interaction.commandName === "dmid") {
 

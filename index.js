@@ -71,7 +71,8 @@ intents: [
 GatewayIntentBits.Guilds,
 GatewayIntentBits.GuildMembers,
 GatewayIntentBits.GuildMessages,
-GatewayIntentBits.MessageContent
+GatewayIntentBits.MessageContent,
+GatewayIntentBits.GuildPresences
 ]
 });
 
@@ -256,6 +257,10 @@ await bannedMessage.edit({ embeds: [embed] });
 }
 
 }
+
+let memberActivityMessage = null;
+
+async function updateMemberActivity(guild) {
 
 client.on("interactionCreate", async interaction => {
 
@@ -789,9 +794,6 @@ ephemeral: true
 
 }
 
-let memberActivityMessage = null;
-
-async function updateMemberActivity(guild) {
 
 const channel = guild.channels.cache.get(MEMBER_ACTIVITY_CHANNEL);
 if (!channel) return;

@@ -260,8 +260,6 @@ await bannedMessage.edit({ embeds: [embed] });
 
 let memberActivityMessage = null;
 
-async function updateMemberActivity(guild) {
-
 client.on("interactionCreate", async interaction => {
 
 const guild = interaction.guild;
@@ -794,6 +792,9 @@ ephemeral: true
 
 }
 
+});
+
+async function updateMemberActivity(guild) {
 
 const channel = guild.channels.cache.get(MEMBER_ACTIVITY_CHANNEL);
 if (!channel) return;
@@ -893,7 +894,5 @@ await memberActivityMessage.edit({ embeds: [embed] });
 }
 
 }
-
-});
 
 client.login(process.env.TOKEN);

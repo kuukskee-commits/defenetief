@@ -906,7 +906,7 @@ if (amount > 20) {
 return interaction.reply({ content: "❌ Maximum is 20.", ephemeral: true });
 }
 
-await interaction.reply(`🎙️ Ik ga **${amount} keer** joinen en leaven in ${channel}.`);
+await interaction.deferReply({ ephemeral: true });
 
 for (let i = 0; i < amount; i++) {
 
@@ -923,6 +923,7 @@ connection.destroy();
 await new Promise(r => setTimeout(r, 1000));
 
 }
+await interaction.editReply(`✅ Klaar! Ik ben **${amount} keer** gejoined en geleaved in ${channel}.`);
 
 
 }

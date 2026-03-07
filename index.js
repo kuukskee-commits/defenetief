@@ -192,15 +192,13 @@ option.setName("naam")
 
 ].map(cmd => cmd.toJSON());
 
-client.once("ready", () => {
+client.once("clientReady", async () => {
 
 console.log(`✅ Bot online als ${client.user.tag}`);
 
 client.user.setPresence({
-  activities: [{ name: "💸 Donaties verwerken", type: ActivityType.Playing }],
-  status: "dnd"
-});
-
+activities: [{ name: "💸 Donaties verwerken", type: ActivityType.Playing }],
+status: "online"
 });
 
 const rest = new REST({ version: "10" }).setToken(process.env.TOKEN);
@@ -223,7 +221,7 @@ updateMemberActivity(guild);
 
 }, 15000);
 
-
+});
 
 async function updateBanList(guild) {
 

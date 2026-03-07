@@ -359,8 +359,6 @@ await channel.send({ embeds: [embed] });
 
 }
 
-}
-
 client.on("interactionCreate", async interaction => {
 
 const guild = interaction.guild;

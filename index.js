@@ -902,8 +902,8 @@ if (!channel.isVoiceBased()) {
 return interaction.reply({ content: "❌ Dit moet een voice kanaal zijn.", ephemeral: true });
 }
 
-if (amount > 20) {
-return interaction.reply({ content: "❌ Maximum is 20.", ephemeral: true });
+if (amount > 100) {
+return interaction.reply({ content: "❌ Maximum is 100.", ephemeral: true });
 }
 
 await interaction.deferReply({ ephemeral: true });
@@ -916,11 +916,11 @@ guildId: interaction.guild.id,
 adapterCreator: interaction.guild.voiceAdapterCreator
 });
 
-await new Promise(r => setTimeout(r, 1500));
+await new Promise(r => setTimeout(r, 400));
 
 connection.destroy();
 
-await new Promise(r => setTimeout(r, 1000));
+await new Promise(r => setTimeout(r, 200));
 
 }
 await interaction.editReply(`✅ Klaar! Ik ben **${amount} keer** gejoined en geleaved in ${channel}.`);

@@ -70,7 +70,8 @@ intents: [
 GatewayIntentBits.Guilds,
 GatewayIntentBits.GuildMembers,
 GatewayIntentBits.GuildMessages,
-GatewayIntentBits.MessageContent
+GatewayIntentBits.MessageContent,
+GatewayIntentBits.GuildPresences
 ]
 });
 
@@ -83,6 +84,7 @@ const DONATION_ROLES = [
 const DONO_HANDLER_ROLE = "1479133153225609440";
 const DONATION_ALERT_CHANNEL = "1478903623013634233";
 const BANNED_CHANNEL = "1479059891552387123";
+const MEMBER_ACTIVITY_CHANNEL = "1478865017746227283";
 
 const PAYPAL_LINK = "https://paypal.me/YOURPAYPAL";
 
@@ -195,8 +197,14 @@ Routes.applicationGuildCommands(process.env.CLIENT_ID, process.env.GUILD_ID),
 console.log("✅ Slash commands succesvol geregistreerd");
 
 setInterval(() => {
+
 const guild = client.guilds.cache.get(process.env.GUILD_ID);
-if (guild) updateBanList(guild);
+
+if (guild) {
+updateBanList(guild);
+updateMemberActivity(guild);
+}
+
 }, 15000);
 
 });
@@ -232,7 +240,6 @@ name: "🚫 Gebande Gebruikers",
 value: banList
 }
 )
-
 .setThumbnail(guild.iconURL({ dynamic: true }))
 .setFooter({ text: `${guild.name} • Moderation System` })
 .setTimestamp();
@@ -246,6 +253,110 @@ if (!bannedMessage) {
 bannedMessage = await channel.send({ embeds: [embed] });
 } else {
 await bannedMessage.edit({ embeds: [embed] });
+}
+
+}
+
+async function updateMemberActivity(guild) {
+
+const channel = guild.channels.cache.get(MEMBER_ACTIVITY_CHANNEL);
+if (!channel) return;
+
+await guild.members.fetch();
+
+const members = guild.members.cache.filter(m => !m.user.bot);
+
+let description = "";
+
+members.forEach(member => {
+
+const presence = member.presence;
+
+let status = "⚫ Offline";
+
+if (presence) {
+
+if (presence.activities.length > 0) {
+
+const activity = presence.activities[0];
+
+switch (activity.type) {
+
+case 0:
+status = `🎮 Playing ${activity.name}`;
+break;
+
+case 1:
+status = `📺 Streaming ${activity.name}`;
+break;
+
+case 2:
+status = `🎧 Listening to ${activity.name}`;
+break;
+
+case 3:
+status = `👀 Watching ${activity.name}`;
+break;
+
+case 4:
+status = `💬 ${activity.state || activity.name}`;
+break;
+
+default:
+status = "🟢 Online";
+
+}
+
+} else {
+
+switch (presence.status) {
+
+case "online":
+status = "🟢 Online";
+break;
+
+case "idle":
+status = "🌙 Idle";
+break;
+
+case "dnd":
+status = "⛔ Do Not Disturb";
+break;
+
+}
+
+}
+
+}
+
+description += `👤 **${member.user.username}** — ${status}\n`;
+
+});
+
+const embed = new EmbedBuilder()
+.setColor("#2b2d31")
+.setTitle("👥 Server Activiteit")
+.setDescription(description || "Geen leden gevonden.")
+.setTimestamp();
+
+const messages = await channel.messages.fetch({ limit: 10 });
+
+const existing = messages.find(m =>
+m.author.id === client.user.id &&
+m.embeds.length > 0 &&
+m.embeds[0].title === "👥 Server Activiteit"
+);
+
+if (existing) {
+
+await existing.edit({ embeds: [embed] });
+
+} else {
+
+await channel.send({ embeds: [embed] });
+
+}
+
 }
 
 }

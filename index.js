@@ -179,6 +179,18 @@ option.setName("aantal")
 .setRequired(true)),
 
 new SlashCommandBuilder()
+.setName("send")
+.setDescription("📢 Laat de bot een bericht sturen in een kanaal")
+.addChannelOption(option =>
+option.setName("kanaal")
+.setDescription("Kanaal waar het bericht moet komen")
+.setRequired(true))
+.addStringOption(option =>
+option.setName("bericht")
+.setDescription("Het bericht dat gestuurd moet worden")
+.setRequired(true)),
+
+new SlashCommandBuilder()
 .setName("nick")
 .setDescription("✏️ Verander de nickname van een gebruiker")
 .addUserOption(option =>
@@ -974,6 +986,57 @@ ephemeral: true
 
 return interaction.reply({
 content: "❌ Kon geen DM sturen naar deze gebruiker.",
+ephemeral: true
+});
+
+}
+
+}
+
+if (interaction.commandName === "send") {
+
+const ALLOWED_ROLE = "1478874554448482517";
+
+if (!interaction.member.roles.cache.has(ALLOWED_ROLE)) {
+return interaction.reply({
+content: "❌ Jij mag dit command niet gebruiken.",
+ephemeral: true
+});
+}
+
+const channel = interaction.options.getChannel("kanaal");
+const message = interaction.options.getString("bericht");
+
+try {
+
+await channel.send(message);
+
+sendLog(guild, "📢 Bot Bericht Verstuurd", "#00b0f4", [
+{
+name: "📍 Kanaal",
+value: `<#${channel.id}>`
+},
+{
+name: "👮 Staff",
+value: `<@${interaction.user.id}>
+${interaction.user.tag}
+${interaction.user.id}`
+},
+{
+name: "💬 Bericht",
+value: message
+}
+], interaction.user.displayAvatarURL({ dynamic: true }));
+
+return interaction.reply({
+content: `✅ Bericht gestuurd in ${channel}`,
+ephemeral: true
+});
+
+} catch (err) {
+
+return interaction.reply({
+content: "❌ Kon bericht niet sturen.",
 ephemeral: true
 });
 

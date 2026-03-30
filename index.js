@@ -45,6 +45,27 @@ logChannel.send({ embeds: [embed] });
 
 }
 
+// Functie om volledige command te krijgen
+function getFullCommand(interaction) {
+let cmd = `/${interaction.commandName}`;
+interaction.options.data.forEach(option => {
+if (option.type === 6) { // USER
+cmd += ` ${option.name}:<@${option.value}>`;
+} else if (option.type === 3) { // STRING
+cmd += ` ${option.name}:${option.value}`;
+} else if (option.type === 8) { // ROLE
+cmd += ` ${option.name}:<@&${option.value}>`;
+} else if (option.type === 7) { // CHANNEL
+cmd += ` ${option.name}:<#${option.value}>`;
+} else if (option.type === 4) { // INTEGER
+cmd += ` ${option.name}:${option.value}`;
+} else {
+cmd += ` ${option.name}:${option.value}`;
+}
+});
+return cmd;
+}
+
 const app = express();
 const PORT = process.env.PORT || 3000;
 
@@ -488,6 +509,10 @@ value: `<@${interaction.user.id}>\n${interaction.user.tag}\n${interaction.user.i
 {
 name: "🔧 Command",
 value: interaction.commandName
+},
+{
+name: "🔧 Volledige Command",
+value: getFullCommand(interaction)
 }
 ], interaction.user.displayAvatarURL({ dynamic: true }));
 return interaction.reply({ content: "❌ Je hebt niet de juiste rol om deze command te gebruiken.", ephemeral: true });
@@ -506,7 +531,11 @@ name: "🔧 Command",
 value: "ban"
 },
 {
-name: "📄 Nodige Permissie",
+name: "� Volledige Command",
+value: getFullCommand(interaction)
+},
+{
+name: "�📄 Nodige Permissie",
 value: "Ban Members"
 }
 ], interaction.user.displayAvatarURL({ dynamic: true }));
@@ -593,7 +622,11 @@ name: "🔧 Command",
 value: "kick"
 },
 {
-name: "📄 Nodige Permissie",
+name: "� Volledige Command",
+value: getFullCommand(interaction)
+},
+{
+name: "�📄 Nodige Permissie",
 value: "Kick Members"
 }
 ], interaction.user.displayAvatarURL({ dynamic: true }));
@@ -667,7 +700,11 @@ name: "🔧 Command",
 value: "unban"
 },
 {
-name: "📄 Nodige Permissie",
+name: "� Volledige Command",
+value: getFullCommand(interaction)
+},
+{
+name: "�📄 Nodige Permissie",
 value: "Ban Members"
 }
 ], interaction.user.displayAvatarURL({ dynamic: true }));
@@ -939,7 +976,11 @@ name: "🔧 Command",
 value: "nick"
 },
 {
-name: "📄 Nodige Permissie",
+name: "� Volledige Command",
+value: getFullCommand(interaction)
+},
+{
+name: "�📄 Nodige Permissie",
 value: "Manage Nicknames"
 }
 ], interaction.user.displayAvatarURL({ dynamic: true }));

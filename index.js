@@ -23,12 +23,12 @@ process.on("unhandledRejection", console.error);
 
 
 // LOG CHANNEL
-const LOG_CHANNEL = "1479215303123538021";
+// const LOG_CHANNEL = "1479215303123538021"; // Removed, now using config.logChannel
 
 // Log functie
 function sendLog(guild, title, color, fields, avatar = null) {
 
-const logChannel = guild.channels.cache.get(LOG_CHANNEL);
+const logChannel = guild.channels.cache.get(config.logChannel);
 if (!logChannel) return;
 
 const embed = new EmbedBuilder()
@@ -65,6 +65,26 @@ fs.writeFileSync(CONFIG_FILE, JSON.stringify(data, null, 2));
 }
 
 let config = loadConfig();
+
+// Log functie
+function sendLog(guild, title, color, fields, avatar = null) {
+
+const logChannel = guild.channels.cache.get(config.logChannel);
+if (!logChannel) return;
+
+const embed = new EmbedBuilder()
+.setColor(color)
+.setTitle(title)
+.addFields(fields)
+.setTimestamp();
+
+if (avatar) {
+embed.setThumbnail(avatar);
+}
+
+logChannel.send({ embeds: [embed] });
+
+}
 
 const client = new Client({
 intents: [
@@ -460,13 +480,38 @@ return interaction.update({ embeds: [embed], components: [] });
 if (!interaction.isChatInputCommand()) return;
 
 if (!interaction.member.roles.cache.has(DONO_HANDLER_ROLE)) {
+sendLog(guild, "❌ Onvoldoende Rol", "#ff0000", [
+{
+name: "👤 Gebruiker",
+value: `<@${interaction.user.id}>\n${interaction.user.tag}\n${interaction.user.id}`
+},
+{
+name: "🔧 Command",
+value: interaction.commandName
+}
+], interaction.user.displayAvatarURL({ dynamic: true }));
 return interaction.reply({ content: "❌ Je hebt niet de juiste rol om deze command te gebruiken.", ephemeral: true });
 }
 
 if (interaction.commandName === "ban") {
 
-if (!interaction.member.permissions.has(PermissionsBitField.Flags.BanMembers))
+if (!interaction.member.permissions.has(PermissionsBitField.Flags.BanMembers)) {
+sendLog(guild, "❌ Onvoldoende Permissies", "#ff0000", [
+{
+name: "👤 Gebruiker",
+value: `<@${interaction.user.id}>\n${interaction.user.tag}\n${interaction.user.id}`
+},
+{
+name: "🔧 Command",
+value: "ban"
+},
+{
+name: "📄 Nodige Permissie",
+value: "Ban Members"
+}
+], interaction.user.displayAvatarURL({ dynamic: true }));
 return interaction.reply({ content: "❌ Geen permissie.", ephemeral: true });
+}
 
 const user = interaction.options.getUser("user");
 const reason = interaction.options.getString("reden") || "Geen reden";
@@ -537,8 +582,23 @@ return interaction.reply({content: `🔨 ${user.tag} is gebanned.`,ephemeral: tr
 
 if (interaction.commandName === "kick") {
 
-if (!interaction.member.permissions.has(PermissionsBitField.Flags.KickMembers))
+if (!interaction.member.permissions.has(PermissionsBitField.Flags.KickMembers)) {
+sendLog(guild, "❌ Onvoldoende Permissies", "#ff0000", [
+{
+name: "👤 Gebruiker",
+value: `<@${interaction.user.id}>\n${interaction.user.tag}\n${interaction.user.id}`
+},
+{
+name: "🔧 Command",
+value: "kick"
+},
+{
+name: "📄 Nodige Permissie",
+value: "Kick Members"
+}
+], interaction.user.displayAvatarURL({ dynamic: true }));
 return interaction.reply({ content: "❌ Geen permissie.", ephemeral: true });
+}
 
 const user = interaction.options.getMember("user");
 const reason = interaction.options.getString("reden") || "Geen reden";
@@ -596,8 +656,23 @@ return interaction.reply({content: `👢 ${user.user.tag} is gekicked.`,ephemera
 
 if (interaction.commandName === "unban") {
 
-if (!interaction.member.permissions.has(PermissionsBitField.Flags.BanMembers))
+if (!interaction.member.permissions.has(PermissionsBitField.Flags.BanMembers)) {
+sendLog(guild, "❌ Onvoldoende Permissies", "#ff0000", [
+{
+name: "👤 Gebruiker",
+value: `<@${interaction.user.id}>\n${interaction.user.tag}\n${interaction.user.id}`
+},
+{
+name: "🔧 Command",
+value: "unban"
+},
+{
+name: "📄 Nodige Permissie",
+value: "Ban Members"
+}
+], interaction.user.displayAvatarURL({ dynamic: true }));
 return interaction.reply({ content: "❌ Geen permissie.", ephemeral: true });
+}
 
 const bans = await guild.bans.fetch();
 
@@ -854,6 +929,20 @@ ephemeral: true
 if (interaction.commandName === "nick") {
 
 if (!interaction.member.permissions.has(PermissionsBitField.Flags.ManageNicknames)) {
+sendLog(guild, "❌ Onvoldoende Permissies", "#ff0000", [
+{
+name: "👤 Gebruiker",
+value: `<@${interaction.user.id}>\n${interaction.user.tag}\n${interaction.user.id}`
+},
+{
+name: "🔧 Command",
+value: "nick"
+},
+{
+name: "📄 Nodige Permissie",
+value: "Manage Nicknames"
+}
+], interaction.user.displayAvatarURL({ dynamic: true }));
 return interaction.reply({ 
 content: "❌ Geen permissie.", 
 ephemeral: true 

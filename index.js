@@ -459,6 +459,10 @@ return interaction.update({ embeds: [embed], components: [] });
 
 if (!interaction.isChatInputCommand()) return;
 
+if (!interaction.member.roles.cache.has(DONO_HANDLER_ROLE)) {
+return interaction.reply({ content: "❌ Je hebt niet de juiste rol om deze command te gebruiken.", ephemeral: true });
+}
+
 if (interaction.commandName === "ban") {
 
 if (!interaction.member.permissions.has(PermissionsBitField.Flags.BanMembers))
